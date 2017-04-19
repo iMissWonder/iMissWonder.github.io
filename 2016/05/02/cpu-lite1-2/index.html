@@ -1,0 +1,807 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="计算机原理与汇编," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="第二篇复习Verilog HDL的行为语句（非常重要）。 Verilog HDL行为语句过程语句Verilog定义的模块一般包括有过程语句，过程语句有两种：initial、always。其中initial常用于仿真中的初始化，其中的语句只执行一次，而always中语句则是不断重复执行的。此外，always过程语句是可综合的，initial过程语句是不可综合的。  综合（Synthesis）是将较高">
+<meta name="keywords" content="计算机原理与汇编">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（二）">
+<meta property="og:url" content="http://yoursite.com/2016/05/02/cpu-lite1-2/index.html">
+<meta property="og:site_name" content="iMissWonder's Blog">
+<meta property="og:description" content="第二篇复习Verilog HDL的行为语句（非常重要）。 Verilog HDL行为语句过程语句Verilog定义的模块一般包括有过程语句，过程语句有两种：initial、always。其中initial常用于仿真中的初始化，其中的语句只执行一次，而always中语句则是不断重复执行的。此外，always过程语句是可综合的，initial过程语句是不可综合的。  综合（Synthesis）是将较高">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/2/1.png">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/2/2.png">
+<meta property="og:updated_time" content="2016-05-02T09:43:58.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（二）">
+<meta name="twitter:description" content="第二篇复习Verilog HDL的行为语句（非常重要）。 Verilog HDL行为语句过程语句Verilog定义的模块一般包括有过程语句，过程语句有两种：initial、always。其中initial常用于仿真中的初始化，其中的语句只执行一次，而always中语句则是不断重复执行的。此外，always过程语句是可综合的，initial过程语句是不可综合的。  综合（Synthesis）是将较高">
+<meta name="twitter:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/2/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/02/cpu-lite1-2/"/>
+
+
+
+
+
+  <title> 如何用VerilogHDL编写一个单周期MIPS32CPU（二） | iMissWonder's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">iMissWonder's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Love to do the same thing.</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/02/cpu-lite1-2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="iMissWonder">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iMissWonder's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                如何用VerilogHDL编写一个单周期MIPS32CPU（二）
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-02T13:34:20+08:00">
+                2016-05-02
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a class="cloud-tie-join-count" href="/2016/05/02/cpu-lite1-2/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count join-count" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>第二篇复习Verilog HDL的行为语句（非常重要）。</p>
+<h2 id="Verilog-HDL行为语句"><a href="#Verilog-HDL行为语句" class="headerlink" title="Verilog HDL行为语句"></a>Verilog HDL行为语句</h2><h3 id="过程语句"><a href="#过程语句" class="headerlink" title="过程语句"></a>过程语句</h3><p>Verilog定义的模块一般包括有过程语句，过程语句有两种：initial、always。其中initial常用于仿真中的初始化，其中的语句只执行一次，而always中语句则是不断重复执行的。此外，always过程语句是可综合的，initial过程语句是不可综合的。</p>
+<blockquote>
+<p>综合（Synthesis）是将较高级抽象层次的设计描述自动转化为较低层次描述的过程。有以下几种综合形式。<br>将算法表示、行为描述转换到寄存器传输级（RTL），即从行为描述到结构描述。<br>将RTL级描述转换到逻辑门级，称为逻辑综合。<br>将逻辑门表示转换到PLD器件的配置网表表示，有了配置网表就可完成基于PLD器件的系统实现。<br>综合器就是能够自动实现上述转换的软件工具，其能够将原理图或HDL语言表达、描述的电路编译成由与或阵列、RAM、触发器、寄存器等逻辑单元组成的电路网表。<br><a id="more"></a></p>
+</blockquote>
+<h4 id="always过程语句"><a href="#always过程语句" class="headerlink" title="always过程语句"></a><strong>always过程语句</strong></h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">always @(&lt;敏感信号表达式&gt;)</div><div class="line">begin</div><div class="line"></div><div class="line">    // 语句序列</div><div class="line"></div><div class="line">end</div></pre></td></tr></table></figure>
+<p>always过程语句通常是带有触发条件的，触发条件写在敏感信号表达式中，敏感信号表达式又称为事件表达式或敏感信号列表，当该表达式中变量的值改变时，就会引发其中语句序列的执行。因此，敏感信号表达式中应列出影响块内取值的所有信号。</p>
+<h5 id="敏感信号表达式的格式"><a href="#敏感信号表达式的格式" class="headerlink" title="敏感信号表达式的格式"></a>敏感信号表达式的格式</h5><p>如果有两个或两个以上的敏感信号时，它们之间使用“or”连接，此处还是以32位加法器为例，之前使用assign直接赋值的，其实也可以使用always过程语句实现，如下。只要被加数in1、加数in2中的任何一个改变，都会触发always过程语句，在其中进行加法运算。这里有两个敏感信号in1、in2，使用“or”连接。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">module add32(input  wire[31:0]  in1,   </div><div class="line">             input  wire[31:0]  in2,  </div><div class="line">        output reg[31:0]  out);  </div><div class="line"></div><div class="line">always @ (in1 or in2)             //使用always过程语句实现加法  </div><div class="line">begin  </div><div class="line">      out = in1 + in2;  </div><div class="line">end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<p>敏感信号列表中的多个信号也可以使用逗号隔开，上面的32位加法器可以修改为如下形式。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">module add32(input  wire[31:0]  in1,   </div><div class="line">             input  wire[31:0]  in2,  </div><div class="line">        output reg[31:0]  out);  </div><div class="line"></div><div class="line">always @ (in1, in2)             //多个敏感信号使用逗号分隔  </div><div class="line">begin  </div><div class="line">      out = in1 + in2;  </div><div class="line">end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<p>敏感信号列表也可以使用通配符*，表示在该过程语句中的所有输入信号变量，上面的32位加法器可以修改为如下形式。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div></pre></td><td class="code"><pre><div class="line">module add32(input  wire[31:0]  in1,   </div><div class="line">             input  wire[31:0]  in2,  </div><div class="line">        output reg[31:0]  out);  </div><div class="line"></div><div class="line">always @ (*)                   //使用通配符表示过程语句中的所有输入信号变量  </div><div class="line">begin  </div><div class="line">      out = in1 + in2;  </div><div class="line">end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h5 id="组合电路与时序电路"><a href="#组合电路与时序电路" class="headerlink" title="组合电路与时序电路"></a>组合电路与时序电路</h5><p>敏感信号可以分为两种类型：一种为电平敏感型，一种为边沿敏感型。前一种一般对应组合电路，如上面给出的加法器的例子，后一种一般对应时序电路。对于时序电路，敏感信号通常是时钟信号，Verilog HDL提供了 <strong>posedge</strong>、negedge 两个关键字来描述时钟信号。<strong>posedge</strong> 表示以时钟信号的上升沿作为触发条件，negedge表示以时钟信号的下降沿作为触发条件。还是以32位加法器为例，可以为其添加一个时钟同步信号，如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">module add32(input wire        clk,     //增加了一个时钟输入信号  </div><div class="line">             input wire[31:0]  in1,   </div><div class="line">             input wire[31:0]  in2,  </div><div class="line">output reg[31:0] out);  </div><div class="line"></div><div class="line">always @ (posedge clk)              //在时钟信号的上升沿会触发always中的语句  </div><div class="line">begin  </div><div class="line">       out = in1 + in2;  </div><div class="line">end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure></p>
+<p>在时钟信号的上升沿，才会进行加法运算，这一点与前面的加法器不同，也就是当被加数in1、加数in2变化时，并不会立即改变输出out，而是要等待时钟信号的上升沿。</p>
+<h4 id="initial过程语句"><a href="#initial过程语句" class="headerlink" title="initial过程语句"></a>initial过程语句</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">inital</div><div class="line">begin</div><div class="line"></div><div class="line">    //语句序列</div><div class="line"></div><div class="line">end</div></pre></td></tr></table></figure>
+<p>initial过程语句不带触发条件，并且其中的语句序列只执行一次。initial过程语句通常用于仿真模块中对激励向量的描述，或用于给寄存器赋初值，它是面向模拟仿真的过程语句，通常不能被综合。如下是initial过程语句的一个例子，用于给存储器mem赋初值。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">initial  </div><div class="line">  begin  </div><div class="line">    for(addr = 0; addr &lt; size; addr = addr+1)  // for是一种循环语句，下文会介绍  </div><div class="line">     mem[addr] = 0;  </div><div class="line">  end</div></pre></td></tr></table></figure>
+<h3 id="赋值语句"><a href="#赋值语句" class="headerlink" title="赋值语句"></a>赋值语句</h3><p>赋值语句有两种： <strong>持续赋值语句、过程赋值语句</strong>。</p>
+<h4 id="持续赋值语句"><a href="#持续赋值语句" class="headerlink" title="持续赋值语句"></a>持续赋值语句</h4><p>assign为持续赋值语句，主要用于对wire型变量的赋值。如上文中加法器的例子。</p>
+<h4 id="过程赋值语句"><a href="#过程赋值语句" class="headerlink" title="过程赋值语句"></a>过程赋值语句</h4><p>在always、initial过程中的赋值语句称为过程赋值语句，多用于对reg型变量进行赋值，分为非阻塞赋值和阻塞赋值两种方式。</p>
+<h5 id="非阻塞赋值（Non-Blocking）"><a href="#非阻塞赋值（Non-Blocking）" class="headerlink" title="非阻塞赋值（Non-Blocking）"></a>非阻塞赋值（Non-Blocking）</h5><p>赋值符号为“&lt;=”<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">b &lt;= a</div></pre></td></tr></table></figure></p>
+<p>非阻塞赋值在整个过程语句结束时才会完成赋值操作，即b的值并不是立刻改变的。</p>
+<h5 id="阻塞赋值（Blocking）"><a href="#阻塞赋值（Blocking）" class="headerlink" title="阻塞赋值（Blocking）"></a>阻塞赋值（Blocking）</h5><p>赋值符号为“=”<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">b = a</div></pre></td></tr></table></figure></p>
+<p>阻塞赋值在该语句结束时就立即完成赋值操作，即b的值在这条语句结束后立刻改变。如果在一个块语句中，有多条阻塞赋值语句，那么在前面的赋值语句没有完成之前，后面的语句就不能被执行，仿佛被阻塞了一样，因此称为阻塞赋值方式。</p>
+<p>在always过程块中，阻塞赋值可以理解为赋值语句是顺序执行的，而非阻塞赋值可以理解为赋值语句是并发执行的。如图2-12所示。在一个过程块中，阻塞式赋值与非阻塞式赋值只能使用其中一种。</p>
+<p><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/2/1.png" alt="statement"></p>
+<h3 id="条件语句"><a href="#条件语句" class="headerlink" title="条件语句"></a>条件语句</h3><p>条件语句有if-else、case两种，应放在always块内。分别介绍如下。</p>
+<h4 id="if-else语句"><a href="#if-else语句" class="headerlink" title="if-else语句"></a>if-else语句</h4><p> if-else语句的格式有如下三种。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line"> (1) if(表达式)                语句序列1;              // 非完整性IF语句  </div><div class="line"></div><div class="line">(2) if(表达式)                语句序列1;              // 二重选择的IF语句  </div><div class="line">else                         语句序列2;  </div><div class="line"></div><div class="line">(3) if(表达式1)               语句序列1;             // 多重选择的IF语句  </div><div class="line">    else if(表达式2)           语句序列2;  </div><div class="line">    else if(表达式3)          语句序列3;  </div><div class="line">      ......  </div><div class="line">else if(表达式n)              语句序列n;  </div><div class="line">else                         语句序列n+1;</div></pre></td></tr></table></figure>
+<p>上述格式中的“表达式”一般为逻辑表达式或关系表达式，也可能是1位的变量。系统对表达式的值进行判断，如果为0、X、Z，则按“假”处理，如果为1，则按“真”处理。语句序列可以是单句，也可以是多句，多句时需使用begin-end块语句括起来。</p>
+<p>还是以32位加法器为例，为其添加一个复位信号rst，如果rst为高电平，那么复位信号有效，输出out为0，反之，复位信号无效，输出out为两个输入信号之和。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div></pre></td><td class="code"><pre><div class="line">module add32(input wire        rst,    // 增加了一个复位信号  </div><div class="line">             input wire[31:0]  in1,   </div><div class="line">             input wire[31:0]  in2,  </div><div class="line">        output reg[31:0] out);  </div><div class="line"></div><div class="line">always @ (*)  </div><div class="line">begin  </div><div class="line">      if(rst == 1&apos;b1)  </div><div class="line">        out &lt;= 32&apos;h0;       // 如果复位信号有效，那么输出out为0  </div><div class="line">else  </div><div class="line">        out &lt;= in1 + in2;   // 反之，输出out为两个输入信号之和  </div><div class="line">end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure></p>
+<h4 id="case语句"><a href="#case语句" class="headerlink" title="case语句"></a>case语句</h4><p>相对于if-else语句只有两个分支而言，case语句是一种多分支语句，所以case语句多用于多条件译码电路，如译码器、数据选择器、状态机及微处理器的指令译码等。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">case(敏感表达式)  </div><div class="line">值1: 语句序列1;  </div><div class="line">值2: 语句序列2;  </div><div class="line">......  </div><div class="line">值n: 语句序列n;  </div><div class="line">default: 语句序列n+1;  </div><div class="line">endcase</div></pre></td></tr></table></figure>
+<p>当敏感表达式的值等于“值1”时，执行语句序列1；当等于“值2”时，执行语句序列2；依次类推。如果敏感表达式的值与上面列出的值都不符，那么执行default后面的语句序列。如下代码是一个简单的运算单元，可执行加法或减法运算，如果输入变量type的值为1，那么执行加法运算，如果type的值为0，那么执行减法运算。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">module add_sub32(input  wire        type,   // type决定运算类型  </div><div class="line">                 input  wire[31:0]  in1,   </div><div class="line">                 input  wire[31:0]  in2,  </div><div class="line">            output reg[31:0]  out);  </div><div class="line"></div><div class="line">always @ (*)  </div><div class="line">begin  </div><div class="line">       case(type)  </div><div class="line">      1&apos;b1 : out &lt;= in1 + in2;  // type为1，执行加法运算  </div><div class="line">      1&apos;b0 : out &lt;= in1 - in2;  // type为0，执行减法运算  </div><div class="line">      default : out &lt;= 32&apos;h0;  </div><div class="line">endcase  </div><div class="line">    end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<p>case语句中，敏感表达式与值1-n之间的比较是一种全等比较，必须保证两者的对应位全等。casez、casex语句是case语句的两种扩展。</p>
+<p>在casez语句中，如果比较的双方某些位的值为高阻Z，那么对这些位的比较结果就不予考虑，只需考虑其它位的比较结果。<br>在casex语句中，如果比较的双方某些位的值为Z或X，那么对这些位的比较结果就不予考虑，只需考虑其它位的比较结果。<br>此外，还有一种表示X或Z的方式，即用表示无关值的符号“?”来表示。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div></pre></td><td class="code"><pre><div class="line">case(a)  </div><div class="line">2&apos;b1x : out &lt;= 1;   //只有a等于2&apos;b1x时，out才等于1  </div><div class="line"></div><div class="line">casez(a)  </div><div class="line">2&apos;b1x : out &lt;= 1;   //a等于2&apos;b1x、2&apos;b1z时，out等于1  </div><div class="line"></div><div class="line">casex(a)  </div><div class="line">2&apos;b1x : out &lt;= 1;   //a等于2&apos;b10、2&apos;b11、2&apos;b1x、2&apos;b1z时，out等于1  </div><div class="line"></div><div class="line">case(a)  </div><div class="line">2&apos;b1? : out &lt;= 1;   //a等于2&apos;b10、2&apos;b11、2&apos;b1x、2&apos;b1z时，out等于1</div></pre></td></tr></table></figure>
+<h3 id="循环语句"><a href="#循环语句" class="headerlink" title="循环语句"></a>循环语句</h3><p>Verilog HDL中存在四种类型的循环语句：for、forever、repeat、while，用来控制语句的执行次数，分别介绍如下。</p>
+<h4 id="for语句"><a href="#for语句" class="headerlink" title="for语句"></a>for语句</h4><p>for语句与C语言是相似的。<br>一个使用for语句实现7人表决器的例子如下。通过for循环统计赞成的人数，若超过4人（含4人）赞成则通过，其中vote[7:1]表示7个人的投票情况，vote[i]为1，表示第i个人投的是赞成票，反之是反对票，pass是输出，超过4个人赞成，pass为1，反之为0。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">module vote7(vote, pass);  </div><div class="line"></div><div class="line">input  wire[7:1] vote;  </div><div class="line">output reg       pass;  </div><div class="line">reg[2:0]         sum;  </div><div class="line">integer          i;  </div><div class="line"></div><div class="line">always @ (vote)  </div><div class="line">begin  </div><div class="line">     sum = 0;  </div><div class="line">     for(i=1; i&lt;7; i=i+1)  </div><div class="line">if(vote[i])  </div><div class="line">       sum = sum+1;      //如果vote[i]为1，那么sum加1，注意此处使用阻塞赋值  </div><div class="line">if(sum[2] == 1&apos;b1)   //如果sum大于等于4，那么输出pass为1  </div><div class="line">       pass = 1;  </div><div class="line">else  </div><div class="line">       pass = 0;  </div><div class="line">end  </div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure></p>
+<h4 id="forever语句"><a href="#forever语句" class="headerlink" title="forever语句"></a>forever语句</h4><p>forever语句的格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">forever begin  </div><div class="line"></div><div class="line">语句序列  </div><div class="line"></div><div class="line">end</div></pre></td></tr></table></figure></p>
+<p>forever循环语句连续不断的执行其中的语句序列，常用来产生周期性的波形。在2.8节编写仿真用的Test Bench文件时，会给出forever语句的例子。</p>
+<h4 id="repeat语句"><a href="#repeat语句" class="headerlink" title="repeat语句"></a>repeat语句</h4><p>repeat语句的格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">repeat(循环次数表达式) begin  </div><div class="line"></div><div class="line">语句序列  </div><div class="line"></div><div class="line">end</div></pre></td></tr></table></figure></p>
+<h4 id="while语句"><a href="#while语句" class="headerlink" title="while语句"></a>while语句</h4><p>while语句的格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">while(循环执行条件表达式) begin  </div><div class="line"></div><div class="line">语句序列  </div><div class="line"></div><div class="line">end</div></pre></td></tr></table></figure></p>
+<p>while语句在执行时，首先判断循环执行条件表达式是否为真，若为真，则执行其中的语句序列，然后再次判断循环执行条件表达式是否为真，若为真，则再次执行其中的语句序列，如此反复，直到循环执行条件表达式不为真。</p>
+<h3 id="编译指示语句（非常重要）"><a href="#编译指示语句（非常重要）" class="headerlink" title="编译指示语句（非常重要）"></a>编译指示语句（非常重要）</h3><p>Verilog HDL和C语言一样提供了编译指示功能，允许在程序中使用编译指示（Compiler Directives）语句，在编译时，通常先对这些指示语句进行预处理，然后再将预处理的 结果和源程序一起进行编译。</p>
+<p>编译指示语句以<code>开始，以区别其它语句。常用的编译指示语句有：</code>define、<code>include、</code>ifdef、<code>else、</code>endif，分别介绍如下。</p>
+<h4 id="宏替换"><a href="#宏替换" class="headerlink" title="宏替换"></a>宏替换</h4><p>`define可以用一个简单的名字或有意义的标识（也称为宏名）代替一个复杂的名字或变量，其格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">`define 宏名 变量或名字</div></pre></td></tr></table></figure></p>
+<p>例如：一般在时序电路中会有一个复位信号，当该复位信号为高电平时表示复位信号有效，当该复位信号为低电平时，表示复位信号无效。分别执行不同的代码，如下。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div></pre></td><td class="code"><pre><div class="line">always @ (clk)  </div><div class="line">begin  </div><div class="line">     if(rst == 1&apos;b1)  </div><div class="line">       //复位有效  </div><div class="line">     else  </div><div class="line">       //复位无效  </div><div class="line">end</div></pre></td></tr></table></figure>
+<p>一种更为友好的书写方式，是使用宏定义，如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line"> // 定义宏RstEnable表示复位信号有效，这个名字对读者而言更有意义  </div><div class="line">`define RstEnable 1&apos;b1  </div><div class="line"></div><div class="line"> ......  </div><div class="line"></div><div class="line">always @ (clk)  </div><div class="line">begin  </div><div class="line">     if(rst == `RstEnable)  // 在编译的时候会自动将`RstEnable替换成1&apos;b1  </div><div class="line">       //复位有效  </div><div class="line">     else  </div><div class="line">       //复位无效  </div><div class="line">end</div></pre></td></tr></table></figure></p>
+<h4 id="include语句"><a href="#include语句" class="headerlink" title="include语句"></a>include语句</h4><p>`include是文件包含语句，它可将一个文件全部包含到另一个文件中，使用格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">`include &quot;文件名&quot;</div></pre></td></tr></table></figure></p>
+<p>在OpenMIPS处理器的实现过程中，我们定义了很多宏，这些宏都集中在文件defines.v中，如果某一程序需要使用其中的宏定义，就可以在程序文件的开始使用`include语句将defines.v文件包含进来即可，如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">`include &quot;defines.v&quot;</div></pre></td></tr></table></figure></p>
+<h4 id="条件编译语句ifdef、else、endif"><a href="#条件编译语句ifdef、else、endif" class="headerlink" title="条件编译语句ifdef、else、endif"></a>条件编译语句ifdef、else、endif</h4><p>条件编译语句<code>ifdef、</code>else、`endif可以指定仅对程序中的部分内容进行编译，有两种使用形式。<br>第一种使用形式如下。当指定的宏在程序中已定义，那么其中的语句序列参与源文件的编译，否则，其中的语句序列不参与源文件的编译。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">`ifdef 宏名  </div><div class="line"></div><div class="line">   语句序列  </div><div class="line"></div><div class="line"> `endif</div></pre></td></tr></table></figure></p>
+<p> 第二种使用形式如下。当指定的宏在程序中已定义，那么其中的语句序列1参与源文件的编译，否则，其中的语句序列2参与源文件的编译。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div></pre></td><td class="code"><pre><div class="line">`ifdef 宏名  </div><div class="line"></div><div class="line">   语句序列1  </div><div class="line"></div><div class="line">`else  </div><div class="line"></div><div class="line">   语句序列2  </div><div class="line"></div><div class="line">`endif</div></pre></td></tr></table></figure></p>
+<h3 id="行为语句的可综合性"><a href="#行为语句的可综合性" class="headerlink" title="行为语句的可综合性"></a>行为语句的可综合性</h3><p>多种行为语句中，有些语句是不可综合的，也就是说综合器无法将这些语句转变为对应的硬件电路。<br><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/2/2.png" alt="statement"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/计算机原理与汇编/" rel="tag"># 计算机原理与汇编</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/02/cpu-lite1-3/" rel="next" title="如何用VerilogHDL编写一个单周期MIPS32CPU（三）">
+                <i class="fa fa-chevron-left"></i> 如何用VerilogHDL编写一个单周期MIPS32CPU（三）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/01/cpu-lite1-1/" rel="prev" title="如何用VerilogHDL编写一个单周期MIPS32CPU（一）">
+                如何用VerilogHDL编写一个单周期MIPS32CPU（一） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="iMissWonder" />
+          <p class="site-author-name" itemprop="name">iMissWonder</p>
+           
+              <p class="site-description motion-element" itemprop="description">Love to do the same thing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#Verilog-HDL行为语句"><span class="nav-number">1.</span> <span class="nav-text">Verilog HDL行为语句</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#过程语句"><span class="nav-number">1.1.</span> <span class="nav-text">过程语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#always过程语句"><span class="nav-number">1.1.1.</span> <span class="nav-text">always过程语句</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#敏感信号表达式的格式"><span class="nav-number">1.1.1.1.</span> <span class="nav-text">敏感信号表达式的格式</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#组合电路与时序电路"><span class="nav-number">1.1.1.2.</span> <span class="nav-text">组合电路与时序电路</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#initial过程语句"><span class="nav-number">1.1.2.</span> <span class="nav-text">initial过程语句</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#赋值语句"><span class="nav-number">1.2.</span> <span class="nav-text">赋值语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#持续赋值语句"><span class="nav-number">1.2.1.</span> <span class="nav-text">持续赋值语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#过程赋值语句"><span class="nav-number">1.2.2.</span> <span class="nav-text">过程赋值语句</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#非阻塞赋值（Non-Blocking）"><span class="nav-number">1.2.2.1.</span> <span class="nav-text">非阻塞赋值（Non-Blocking）</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#阻塞赋值（Blocking）"><span class="nav-number">1.2.2.2.</span> <span class="nav-text">阻塞赋值（Blocking）</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#条件语句"><span class="nav-number">1.3.</span> <span class="nav-text">条件语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#if-else语句"><span class="nav-number">1.3.1.</span> <span class="nav-text">if-else语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#case语句"><span class="nav-number">1.3.2.</span> <span class="nav-text">case语句</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#循环语句"><span class="nav-number">1.4.</span> <span class="nav-text">循环语句</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#for语句"><span class="nav-number">1.4.1.</span> <span class="nav-text">for语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#forever语句"><span class="nav-number">1.4.2.</span> <span class="nav-text">forever语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#repeat语句"><span class="nav-number">1.4.3.</span> <span class="nav-text">repeat语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#while语句"><span class="nav-number">1.4.4.</span> <span class="nav-text">while语句</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#编译指示语句（非常重要）"><span class="nav-number">1.5.</span> <span class="nav-text">编译指示语句（非常重要）</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#宏替换"><span class="nav-number">1.5.1.</span> <span class="nav-text">宏替换</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#include语句"><span class="nav-number">1.5.2.</span> <span class="nav-text">include语句</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#条件编译语句ifdef、else、endif"><span class="nav-number">1.5.3.</span> <span class="nav-text">条件编译语句ifdef、else、endif</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#行为语句的可综合性"><span class="nav-number">1.6.</span> <span class="nav-text">行为语句的可综合性</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">iMissWonder</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+    
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e4292e846c7e4c5f8536bb99cbf2fdcc",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

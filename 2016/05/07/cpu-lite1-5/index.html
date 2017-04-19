@@ -1,0 +1,768 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="计算机原理与汇编," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="第五篇介绍各阶段的功能分析与具体实现， 前四篇为VerilogHDL和ModelSim的操作，熟悉的话可以选择跳过。 本篇将实现十二条指令的功能。R型指令：addu subu slt jrI型指令：addi(addiu) ori lw sw beq liuJ型指令：j jal（没有实现溢出功能，在不计addi溢出的情况下addi和addiu是一样的，imm都需要进行符号扩展） 在开始前我们先来分析">
+<meta name="keywords" content="计算机原理与汇编">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（五）">
+<meta property="og:url" content="http://yoursite.com/2016/05/07/cpu-lite1-5/index.html">
+<meta property="og:site_name" content="iMissWonder's Blog">
+<meta property="og:description" content="第五篇介绍各阶段的功能分析与具体实现， 前四篇为VerilogHDL和ModelSim的操作，熟悉的话可以选择跳过。 本篇将实现十二条指令的功能。R型指令：addu subu slt jrI型指令：addi(addiu) ori lw sw beq liuJ型指令：j jal（没有实现溢出功能，在不计addi溢出的情况下addi和addiu是一样的，imm都需要进行符号扩展） 在开始前我们先来分析">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/5/1.png">
+<meta property="og:updated_time" content="2016-05-07T12:47:06.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（五）">
+<meta name="twitter:description" content="第五篇介绍各阶段的功能分析与具体实现， 前四篇为VerilogHDL和ModelSim的操作，熟悉的话可以选择跳过。 本篇将实现十二条指令的功能。R型指令：addu subu slt jrI型指令：addi(addiu) ori lw sw beq liuJ型指令：j jal（没有实现溢出功能，在不计addi溢出的情况下addi和addiu是一样的，imm都需要进行符号扩展） 在开始前我们先来分析">
+<meta name="twitter:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/5/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/07/cpu-lite1-5/"/>
+
+
+
+
+
+  <title> 如何用VerilogHDL编写一个单周期MIPS32CPU（五） | iMissWonder's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">iMissWonder's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Love to do the same thing.</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/07/cpu-lite1-5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="iMissWonder">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iMissWonder's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                如何用VerilogHDL编写一个单周期MIPS32CPU（五）
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-07T12:40:38+08:00">
+                2016-05-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a class="cloud-tie-join-count" href="/2016/05/07/cpu-lite1-5/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count join-count" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>第五篇介绍各阶段的功能分析与具体实现，</p>
+<p><em>前四篇为VerilogHDL和ModelSim的操作，熟悉的话可以选择跳过。</em></p>
+<p>本篇将实现十二条指令的功能。<br>R型指令：addu subu slt jr<br>I型指令：addi(addiu) ori lw sw beq liu<br>J型指令：j jal<br>（没有实现溢出功能，在不计addi溢出的情况下addi和addiu是一样的，imm都需要进行符号扩展）</p>
+<p>在开始前我们先来分析一下各阶段的功能。<br>①取指 ②译码 ③执行 ④访存 ⑤回写<br><a id="more"></a></p>
+<h2 id="各阶段功能分析"><a href="#各阶段功能分析" class="headerlink" title="各阶段功能分析"></a>各阶段功能分析</h2><h3 id="取指"><a href="#取指" class="headerlink" title="取指"></a>取指</h3><p>取指阶段要从指令存储器中取指令，并把指令传出。<br>同时需要改变PC寄存器中的值，正常指令PC+4，beq和J型指令跳转到相应的PC地址。</p>
+<h3 id="译码"><a href="#译码" class="headerlink" title="译码"></a>译码</h3><p>这里我们没有在数据通路中定义具体的译码器，采用将指令的高六位（opcode）和低六位（funct）传入控制器（controller），进行指令的分析操作，并输出相应的控制信号，相当于译码功能在控制器实现。控制器根据32位指令中的opcode进行指令识别，并改变控制信号。</p>
+<h3 id="执行"><a href="#执行" class="headerlink" title="执行"></a>执行</h3><p>根据译码结果从寄存器组中读出相应的rs、rt的值后，不同的指令具有不同的操作。</p>
+<p>R型指令中rd是寄存器的写入地址，rs是运算器的第一个操作数，rt是<strong> 第二个</strong>操作数（jr除外）。<br>I型指令中rt是寄存器的写入地址，rs是运算器的第一个操作数，<strong> 扩展</strong>后的立即数作为<strong> 第二个</strong>操作数。<br>J型指令进行地址的跳转，opcode外剩下26位均为地址值。</p>
+<p>所以现在需要：<br>①区分第二个运算器操作数为rt或立即数的选择器。<br>当控制信号及操作数输入完毕后，通过控制运算器的信号在运算器中进行相应的操作，并将结果输出。</p>
+<h3 id="访存"><a href="#访存" class="headerlink" title="访存"></a>访存</h3><p>只有lw和sw指令会对数据储存器进行访问。<br>lw指令会输出数据储存器中储存内容，并写入相应寄存器。<br>sw指令会将rt写入数据储存器相应的地址（rs+偏移量）。</p>
+<h3 id="回写"><a href="#回写" class="headerlink" title="回写"></a>回写</h3><p>寄存器写入时需要两个值，一个是内容，一个是地址。<br>所以还需要：<br>②区分写入内容的选择器。<br>③区分写入地址的选择器。</p>
+<h3 id="文件结构分析"><a href="#文件结构分析" class="headerlink" title="文件结构分析"></a>文件结构分析</h3><blockquote>
+<p>单周期处理器由<strong>datapath(数据通路)和controller(控制器)</strong> 组成。<br>a)    数据通路由如下module组成：<br><strong> PC(程序计数器)、NPC(NextPC计算单元)、GPR (通用寄存器组，也称为寄存器文件、寄存器堆)、ALU(算术逻辑单元)、EXT(扩展单元)、IM(指令存储器)、DM(数据存储器)。</strong><br>b)    IM：容量为4KB(32bit×1024字)。<br>c)    DM：容量为4KB(32bit×1024字)。</p>
+</blockquote>
+<p>根据以上的分析，我们的数据通路内需要添加三个选择器。<br>需要注意的是，IM和DM是不包含在数据通路的定义内的，也不包含在mips中，而是在顶层sopc中。<br><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/5/1.png" alt="修改后的文件结构"></p>
+<p>接下来将分阶段实现各模块的功能，一些指令细节的实现不具体说明，注释已经很清楚了。</p>
+<h2 id="取指阶段"><a href="#取指阶段" class="headerlink" title="取指阶段"></a>取指阶段</h2><h3 id="PC寄存器的实现"><a href="#PC寄存器的实现" class="headerlink" title="PC寄存器的实现"></a>PC寄存器的实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div></pre></td><td class="code"><pre><div class="line">module pc(</div><div class="line">    //输入</div><div class="line">    input wire[31:2] npc,</div><div class="line">    input wire clk,</div><div class="line">    input wire rst,</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output reg[31:2] pc</div><div class="line">    );</div><div class="line"></div><div class="line">    reg[31:0] pcreg;                  //定义PC寄存器</div><div class="line"></div><div class="line">    always @ (*) begin</div><div class="line">        pc &lt;= pcreg[31:2];            //为PC寄存器赋值</div><div class="line">    end</div><div class="line"></div><div class="line">    always @ (posedge clk) begin</div><div class="line">        if (rst) begin</div><div class="line">            pcreg &lt;= 32&apos;h00003000;    //pc的初始值，与Mars中相同</div><div class="line">        end else begin</div><div class="line">            pcreg &lt;= &#123;npc,2&apos;b00&#125;;</div><div class="line">        end</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="计算下一个PC地址（NPC）的实现"><a href="#计算下一个PC地址（NPC）的实现" class="headerlink" title="计算下一个PC地址（NPC）的实现"></a>计算下一个PC地址（NPC）的实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div></pre></td><td class="code"><pre><div class="line">module npc(</div><div class="line">    //输入</div><div class="line">    input wire[31:2] pc,        //30位pc</div><div class="line">    input wire[31:0] im,        //指令储存器输出的指令</div><div class="line">    input wire[1:0] nPCsel,     //跳转指令的判断</div><div class="line">                                //00:不跳转      01：beq指令</div><div class="line">                                //10:J型指令     11:jr指令</div><div class="line">    input wire[31:0] jalInput,  //$31的内容</div><div class="line">    input wire zero,            //beq指令判断是否相等的依据，zero为0时进行跳转</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output reg[31:2] npc,       //下一个pc的值</div><div class="line">    output reg[31:0] jaladdr    //储存到$31的返回地址</div><div class="line">    );</div><div class="line"></div><div class="line"></div><div class="line">    reg [29:0] beqaddr ;                                     //beq指令的30位pc码</div><div class="line">    reg [29:0] jaddr;                                        //J型指令的30位pc码</div><div class="line"></div><div class="line">    always @ (*) begin</div><div class="line">        beqaddr &lt;= &#123;&#123;14&#123;im[15]&#125;&#125; ,im[15:0]&#125; + pc + 1&apos;b1;    //beq指令的跳转地址</div><div class="line">        jaddr   &lt;= &#123;pc[31:28], im[25:0]&#125;;                   //J型指令的跳转地址</div><div class="line">        jaladdr &lt;= &#123;pc, 2&apos;b00&#125;+ 4;                          //储存到$31的返回地址</div><div class="line">    end</div><div class="line"></div><div class="line">    always @ (*) begin</div><div class="line">        case (nPCsel)</div><div class="line">            2&apos;b00 : npc &lt;= pc + 1&apos;b1;             //不跳转，pc+4</div><div class="line">            2&apos;b01 : begin</div><div class="line">                if (zero == 0 ) begin</div><div class="line">                    npc &lt;= beqaddr;               //跳转到beq中的跳转地址</div><div class="line">                end else begin</div><div class="line">                    npc &lt;= pc + 1&apos;b1;             //zero不为0，pc+4</div><div class="line">                end</div><div class="line">            end</div><div class="line">            2&apos;b10 : npc &lt;= jaddr;                 //跳转到J型指令的pc跳转地址</div><div class="line">            2&apos;b11 : npc &lt;= jalInput[31:2];        //跳转到$31寄存器储存内容的地址</div><div class="line">        endcase</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="指令储存器（IM）的实现"><a href="#指令储存器（IM）的实现" class="headerlink" title="指令储存器（IM）的实现"></a>指令储存器（IM）的实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div></pre></td><td class="code"><pre><div class="line">module im(</div><div class="line">    //输入</div><div class="line">    input wire[11:2] addr,</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output reg[31:0] imout</div><div class="line">    );</div><div class="line"></div><div class="line">    reg [31:0] im[1023:0];               //二维向量定义指令储存器，大小为4KB</div><div class="line"></div><div class="line">    //使用initial初始化指令储存器</div><div class="line">    initial begin</div><div class="line">        $readmemh(&quot;code.txt&quot; , im) ;     //使用$readmemh函数加载文件中的32位指令</div><div class="line">    end</div><div class="line"></div><div class="line">    always @ (*) begin</div><div class="line">        imout &lt;= im[addr];               //根据地址输出指令</div><div class="line">    end</div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/计算机原理与汇编/" rel="tag"># 计算机原理与汇编</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/07/cpu-lite1-6/" rel="next" title="如何用VerilogHDL编写一个单周期MIPS32CPU（六）">
+                <i class="fa fa-chevron-left"></i> 如何用VerilogHDL编写一个单周期MIPS32CPU（六）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/02/cpu-lite1-4/" rel="prev" title="如何用VerilogHDL编写一个单周期MIPS32CPU（四）">
+                如何用VerilogHDL编写一个单周期MIPS32CPU（四） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="iMissWonder" />
+          <p class="site-author-name" itemprop="name">iMissWonder</p>
+           
+              <p class="site-description motion-element" itemprop="description">Love to do the same thing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#各阶段功能分析"><span class="nav-number">1.</span> <span class="nav-text">各阶段功能分析</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#取指"><span class="nav-number">1.1.</span> <span class="nav-text">取指</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#译码"><span class="nav-number">1.2.</span> <span class="nav-text">译码</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#执行"><span class="nav-number">1.3.</span> <span class="nav-text">执行</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#访存"><span class="nav-number">1.4.</span> <span class="nav-text">访存</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#回写"><span class="nav-number">1.5.</span> <span class="nav-text">回写</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#文件结构分析"><span class="nav-number">1.6.</span> <span class="nav-text">文件结构分析</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#取指阶段"><span class="nav-number">2.</span> <span class="nav-text">取指阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PC寄存器的实现"><span class="nav-number">2.1.</span> <span class="nav-text">PC寄存器的实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#计算下一个PC地址（NPC）的实现"><span class="nav-number">2.2.</span> <span class="nav-text">计算下一个PC地址（NPC）的实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#指令储存器（IM）的实现"><span class="nav-number">2.3.</span> <span class="nav-text">指令储存器（IM）的实现</span></a></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">iMissWonder</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+    
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e4292e846c7e4c5f8536bb99cbf2fdcc",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

@@ -1,0 +1,800 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="计算机原理与汇编," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="题目：用VerilogHDL完成单周期处理器开发。  单周期处理器由datapath(数据通路)和controller(控制器) 组成。 a)    数据通路由如下module组成： PC(程序计数器)、NPC(NextPC计算单元)、GPR (通用寄存器组，也称为寄存器文件、寄存器堆)、ALU(算术逻辑单元)、EXT(扩展单元)、IM(指令存储器)、DM(数据存储器)。b)    IM：容量为4">
+<meta name="keywords" content="计算机原理与汇编">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（一）">
+<meta property="og:url" content="http://yoursite.com/2016/05/01/cpu-lite1-1/index.html">
+<meta property="og:site_name" content="iMissWonder's Blog">
+<meta property="og:description" content="题目：用VerilogHDL完成单周期处理器开发。  单周期处理器由datapath(数据通路)和controller(控制器) 组成。 a)    数据通路由如下module组成： PC(程序计数器)、NPC(NextPC计算单元)、GPR (通用寄存器组，也称为寄存器文件、寄存器堆)、ALU(算术逻辑单元)、EXT(扩展单元)、IM(指令存储器)、DM(数据存储器)。b)    IM：容量为4">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/2.png">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/3.png">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/1.png">
+<meta property="og:updated_time" content="2016-05-07T12:46:44.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（一）">
+<meta name="twitter:description" content="题目：用VerilogHDL完成单周期处理器开发。  单周期处理器由datapath(数据通路)和controller(控制器) 组成。 a)    数据通路由如下module组成： PC(程序计数器)、NPC(NextPC计算单元)、GPR (通用寄存器组，也称为寄存器文件、寄存器堆)、ALU(算术逻辑单元)、EXT(扩展单元)、IM(指令存储器)、DM(数据存储器)。b)    IM：容量为4">
+<meta name="twitter:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/2.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/01/cpu-lite1-1/"/>
+
+
+
+
+
+  <title> 如何用VerilogHDL编写一个单周期MIPS32CPU（一） | iMissWonder's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">iMissWonder's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Love to do the same thing.</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/01/cpu-lite1-1/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="iMissWonder">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iMissWonder's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                如何用VerilogHDL编写一个单周期MIPS32CPU（一）
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-01T17:31:49+08:00">
+                2016-05-01
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a class="cloud-tie-join-count" href="/2016/05/01/cpu-lite1-1/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count join-count" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>题目：用VerilogHDL完成单周期处理器开发。</p>
+<blockquote>
+<p>单周期处理器由<strong>datapath(数据通路)和controller(控制器)</strong> 组成。</p>
+<p>a)    数据通路由如下module组成：<br><strong> PC(程序计数器)、NPC(NextPC计算单元)、GPR (通用寄存器组，也称为寄存器文件、寄存器堆)、ALU(算术逻辑单元)、EXT(扩展单元)、IM(指令存储器)、DM(数据存储器)。</strong><br>b)    IM：容量为4KB(32bit×1024字)。<br>c)    DM：容量为4KB(32bit×1024字)。</p>
+</blockquote>
+<p>本系列文章内容前四篇内容摘自《自己动手写CPU》，后三篇为原创。在此十分感谢作者把书无偿发布到博客上，为我们提供了宝贵的资源！</p>
+<p>需要环境：<br>1.ModelSim 10.1a<br>2.测试程序Mars（需要Java环境）</p>
+<p>第一篇为复习VerilogHDL的基本语法、结构。</p>
+<a id="more"></a>
+<h2 id="VerilogHDL的基本语法"><a href="#VerilogHDL的基本语法" class="headerlink" title="VerilogHDL的基本语法"></a>VerilogHDL的基本语法</h2><h3 id="Verilog-HDL中模块的结构"><a href="#Verilog-HDL中模块的结构" class="headerlink" title="Verilog HDL中模块的结构"></a>Verilog HDL中模块的结构</h3><p>Verilog程序的基本设计单元是“模块”（Module），一个模块有其特定的结构，如图2-6所示。Verilog的模块完全定义在module与endmodule关键字之间，每个模块包括四个主要部分：<strong>模块声明、端口定义、数据类型说明和逻辑功能描述。</strong></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div></pre></td><td class="code"><pre><div class="line">module&lt;模块名&gt;(</div><div class="line">      &lt;端口&gt;</div><div class="line">      &lt;端口&gt;        模块声明</div><div class="line">      ……</div><div class="line">);</div><div class="line"></div><div class="line">      &lt;端口定义&gt;</div><div class="line"></div><div class="line">      &lt;数据类型说明&gt;</div><div class="line"></div><div class="line">      &lt;逻辑功能描述&gt;</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<p>如下是一个实现32位加法器的模块。有两个输入信号in1、in2，两者相加的结果通过out输出。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">module add32(in1, in2, out); // 模块声明</div><div class="line">input in1, in2; // 端口定义，此处是输入端口</div><div class="line">output out; // 端口定义，此处是输出端口</div><div class="line">wire[31:0] in1, in2, out; // 数据类型说明，此处都是wire型</div><div class="line">assign out = in1 + in2; // 逻辑功能描述</div><div class="line">endmodule</div></pre></td></tr></table></figure></p>
+<p>下面结合该加法器的例子，对Module的基本结构进行说明。</p>
+<h4 id="1-模块声明"><a href="#1-模块声明" class="headerlink" title="1.模块声明"></a>1.模块声明</h4><p>模块声明包括模块名字，以及输入、输出端口列表，其格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">module 模块名(端口1, 端口2, 端口3……);</div></pre></td></tr></table></figure></p>
+<h4 id="2-端口定义"><a href="#2-端口定义" class="headerlink" title="2.端口定义"></a>2.端口定义</h4><p>明确说明模块端口的方向（输入、输出、双向等），其格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">input 端口1, 端口2, 端口3 ……; // 输入端口</div><div class="line">output 端口1, 端口2, 端口3 ……; // 输出端口</div><div class="line">inout 端口1, 端口2, 端口3 ……; // 双向端口</div></pre></td></tr></table></figure></p>
+<h4 id="3-数据类型说明"><a href="#3-数据类型说明" class="headerlink" title="3.数据类型说明"></a>3.数据类型说明</h4><p>对模块中所有用到的信号（包括端口信号、节点信号等）都必须进行数据类型的定义。Verilog HDL提供了各种信号类型，下面是几种定义信号类型的例子。各数据类型的具体含义将在2.5.2节详述。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">reg a; // 定义信号a的数据类型为reg型</div><div class="line">wire[31:0] out ; // 定义信号out的数据类型为32位wire型</div></pre></td></tr></table></figure></p>
+<p>对于端口，可以将数据类型说明与端口定义放在一条语句中完成，于是，上文的32位加法器可以改为如下形式。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div></pre></td><td class="code"><pre><div class="line">module add32(in1, in2, out);</div><div class="line">input wire[31:0] in1, in2; // 将端口定义与类型说明放在一条语句</div><div class="line">output wire[31:0] out;</div><div class="line">assign out = in1 + in2;</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<p>对于端口，还可以将端口定义、数据类型说明都放在模块声明中，而不再放在模块内部，于是，上文的32位加法器还可以改为如下形式，更为简便。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div></pre></td><td class="code"><pre><div class="line">// 将端口定义、数据类型说明放在模块声明中</div><div class="line">module add32(input wire[31:0] in1,</div><div class="line">input wire[31:0] in2,</div><div class="line">output wire[31:0] out);</div><div class="line">assign out = in1 + in2;</div><div class="line">endmodule</div></pre></td></tr></table></figure></p>
+<h4 id="4-逻辑功能描述"><a href="#4-逻辑功能描述" class="headerlink" title="4.逻辑功能描述"></a>4.逻辑功能描述</h4><p>模块中最核心的部分就是逻辑功能描述，可以有多种方法在模块中描述和定义逻辑功能。几种基本方法如下。</p>
+<blockquote>
+<p>用assign持续赋值语句定义<br>用always过程块定义<br>调用元件（也称为元件例化）</p>
+</blockquote>
+<h2 id="Verilog-HDL基本要素"><a href="#Verilog-HDL基本要素" class="headerlink" title="Verilog HDL基本要素"></a>Verilog HDL基本要素</h2><h3 id="常量"><a href="#常量" class="headerlink" title="常量"></a>常量</h3><p>Verilog中的常量（Constant）有三种：<strong>整数</strong>、<strong>实数</strong>、<strong>字符串</strong>。在OpenMIPS的实现过程中只使用到了整数常量，所以，此处也仅介绍整数常量。</p>
+<p>一些整数常数的例子如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">8&apos;b11000101 // 宽度为8位的二进制数，数值为11000101，等于十进制的197</div><div class="line">8&apos;h8a // 宽度为8位的十六进制数，数值为8a，等于十进制的138</div><div class="line">5&apos;o27 // 宽度为5位的八进制数，数值为27，等于十进制的23</div><div class="line">4&apos;d10 // 宽度为4位的十进制数，数值为10</div></pre></td></tr></table></figure></p>
+<p>如果没有明确指明进制，那么默认是十进制。</p>
+<h3 id="变量声明与数据类型"><a href="#变量声明与数据类型" class="headerlink" title="变量声明与数据类型"></a>变量声明与数据类型</h3><p>Verilog中变量声明的格式如图所示。只有数据类型、变量名是必要的，其他部分都可以省略。如果省略符号和位宽，那么根据数据类型设置为默认值。如果省略元素数，那么默认声明元素数为1。</p>
+<p><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/2.png" alt="statement"></p>
+<p>数据类型可以是net型、variable型，分别介绍如下。</p>
+<h4 id="net型变量"><a href="#net型变量" class="headerlink" title="net型变量"></a>net型变量</h4><p>net型相当于硬件电路中各种物理连接，其特点是输出的值紧跟输入值的变化而变化。net型变量包括多种类型。<br>在实现OpenMIPS处理器的时候 <strong>只使用到了其中的wire类型</strong>。</p>
+<blockquote>
+<p>wire是最常用的net型变量，Verilog HDL模块中的输入、输出信号在没有明确指定数据类型时，都被默认为wire型。wire型信号可以用作任何表达式的输入，也可以用作assign语句和实例元件的输出，如前文中的32位加法器对out信号的赋值。对于综合器而言，wire型变量的取值可为0、1、X、Z，其中0表示低电平、逻辑0；1表示高电平、逻辑1；X表示不确定或未知的逻辑状态；Z表示高阻态。如果没有赋值，默认为高阻态Z。</p>
+</blockquote>
+<h4 id="variable型变量"><a href="#variable型变量" class="headerlink" title="variable型变量"></a>variable型变量</h4><p>variable型变量是可以保存上次写入数据的数据类型，一般对应硬件上的一个触发器或锁存器等存储元件，但并不是绝对的，在综合器综合的时候，会根据其被赋值的情况来具体确定是映射成连线还是映射为存储元件。variable型变量也包括多种类型。<br>在实现OpenMIPS处理器的时候 <strong>只使用到了其中的reg类型</strong>。<br>variable型变量必须在过程语句（initial或always）中实现赋值，这种赋值方式称为过程赋值。</p>
+<h3 id="向量"><a href="#向量" class="headerlink" title="向量"></a>向量</h3><p>图2-8变量声明格式中的位宽如果为1，那么对应的变量为标量，如果不为1，那么对应的变量为向量，默认为标量。向量的位宽用下面的形式定义。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">[MSB : LSB]</div></pre></td></tr></table></figure></p>
+<p>冒号左边的数字表示向量的最高有效位MSB（Most Significant Bit），冒号右边的数字表示向量的最低有效位LSB（Least Significant Bit）。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">wire [3:0] bus; // 4位的wire型向量bus，其中bus[3]是最高位，bus[0]是最低位</div><div class="line">reg [31:5] ra; // 27位的reg型向量ra，其中ra[31]是最高位，ra[5]是最低位</div><div class="line">reg [0:7] rc; // 8位的reg型向量rc，其中rc[0]是最高位，rc[7]是最低位</div></pre></td></tr></table></figure></p>
+<p>向量有两种，一种是向量类向量，一种是标量类向量，可以使用关键字区分，如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">wire vectored [7:0] databus; // 使用关键字vectored，表示是向量类向量</div><div class="line">reg scalared [31:0] rega; // 使用关键字scalared，表示是标量类向量</div></pre></td></tr></table></figure></p>
+<p>如果没有明确指出，那么默认是标量类向量。<br>实现时 <strong>只用到了标量类向量</strong>，对标量类向量可以任意选中其中的一位或相邻几位，分别称为 <strong>位选择（bit-select）和域选择（part-select）</strong>。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">A = rega[6]; // 位选择，将向量rega的其中一位赋值给变量A</div><div class="line">B = rega[5:2]; // 域选择，将向量rega的第5、4、3、2位赋值给变量B</div></pre></td></tr></table></figure></p>
+<p>在OpenMIPS的实现过程中，<strong>使用到了存储器(寄存器)</strong>，存储器可看做是二维的向量。如下就是一个存储器的定义，定义了一个深度为64，每个元素宽度为32bit的存储器。<br>reg [31:0] mem[63:0]; // mem是深度为64，字长为32bit的存储器</p>
+<h3 id="运算符"><a href="#运算符" class="headerlink" title="运算符"></a>运算符</h3><p>Verilog HDL中定义的运算符包括：算术运算符、逻辑运算符、位运算符、关系运算符、等式运算符、缩位运算符、移位运算符、条件运算符和位拼接运算符。<br><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/3.png" alt="statement"></p>
+<h4 id="等式运算符中的“-”与“-”的区别"><a href="#等式运算符中的“-”与“-”的区别" class="headerlink" title="等式运算符中的“==”与“===”的区别"></a>等式运算符中的“==”与“===”的区别</h4><p>对于“==”运算，参与比较的两个操作数必须逐位相等，其结果才为1，如果某些值是不定态X或高阻态Z，那么得到的结果是不定值X；而对于“===”运算，则要求对参与运算的操作数中为不定态X或高阻态Z的位也进行比较，两个操作数必须完全一致，其结果才为1，否则结果为0。例如。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">reg [4:0] a = 5&apos;b11x01;</div><div class="line">reg [4:0] b = 5&apos;b11x01;</div></pre></td></tr></table></figure></p>
+<p>针对上面的a、b，“a==b”的返回结果为X，而“a===b”的返回结果为1。</p>
+<h4 id="缩位运算符与位运算"><a href="#缩位运算符与位运算" class="headerlink" title="缩位运算符与位运算"></a>缩位运算符与位运算</h4><p>运算符号、逻辑运算法则都是一样的，但是缩位运算符是对单个操作数进行与、或、异或的递推运算，它放在操作数的前面，能够将一个矢量减为一个标量。例如。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">reg [3:0] a;</div><div class="line">b = &amp;a; // 等效于b = ((a[0] &amp; a[1]) &amp; a[2]) &amp; a[3]</div></pre></td></tr></table></figure></p>
+<p>而位运算需要对两个操作数按对应位分别进行逻辑运算，例如。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div></pre></td><td class="code"><pre><div class="line">wire [3:0] a = 4&apos;b0011;</div><div class="line">wire [3:0] b = 4&apos;b0101;</div></pre></td></tr></table></figure></p>
+<p>那么a&amp;b = 4’b0001，a|b = 4’b0111</p>
+<h4 id="位拼接运算符"><a href="#位拼接运算符" class="headerlink" title="位拼接运算符"></a>位拼接运算符</h4><p>用来将两个或多个信号的某些位拼接起来。其格式如下。</p>
+<p>{比特序列0, 比特序列1,…… }<br>例如，在进行加法运算时，可将和与进位输出拼接在一起使用。<br>input [3:0] ina,inb; // 加法输入<br>output [3:0] sum; // 加法的和<br>output cout; // 进位<br>assign {cout, sum} = ina + inb; // 将和与进位拼接在一起<br>位拼接还可以用来重复信号的某些位，其格式如下。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">&#123;重复次数&#123;被重复数据&#125;&#125;</div></pre></td></tr></table></figure></p>
+<p>利用上面的功能，可以实现对信号的符号扩展，例如。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div></pre></td><td class="code"><pre><div class="line">//将Data的符号位进行扩展,s_data = &#123;Data[7],Data[7],Data[7],Data[7],Data&#125;</div><div class="line">wire [7:0] Data;</div><div class="line">wire [11:0] s_data;</div><div class="line">s_data = &#123;&#123;4&#123;Data[7]&#125;&#125;,Data&#125;;</div></pre></td></tr></table></figure></p>
+<h4 id="运算符的优先级"><a href="#运算符的优先级" class="headerlink" title="运算符的优先级"></a>运算符的优先级</h4><p><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/1/1.png" alt="statement"></p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/计算机原理与汇编/" rel="tag"># 计算机原理与汇编</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/02/cpu-lite1-2/" rel="next" title="如何用VerilogHDL编写一个单周期MIPS32CPU（二）">
+                <i class="fa fa-chevron-left"></i> 如何用VerilogHDL编写一个单周期MIPS32CPU（二）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/04/24/cppMGraph/" rel="prev" title="C++实现无向图的深度广度搜索">
+                C++实现无向图的深度广度搜索 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="iMissWonder" />
+          <p class="site-author-name" itemprop="name">iMissWonder</p>
+           
+              <p class="site-description motion-element" itemprop="description">Love to do the same thing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#VerilogHDL的基本语法"><span class="nav-number">1.</span> <span class="nav-text">VerilogHDL的基本语法</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#Verilog-HDL中模块的结构"><span class="nav-number">1.1.</span> <span class="nav-text">Verilog HDL中模块的结构</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#1-模块声明"><span class="nav-number">1.1.1.</span> <span class="nav-text">1.模块声明</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#2-端口定义"><span class="nav-number">1.1.2.</span> <span class="nav-text">2.端口定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#3-数据类型说明"><span class="nav-number">1.1.3.</span> <span class="nav-text">3.数据类型说明</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#4-逻辑功能描述"><span class="nav-number">1.1.4.</span> <span class="nav-text">4.逻辑功能描述</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Verilog-HDL基本要素"><span class="nav-number">2.</span> <span class="nav-text">Verilog HDL基本要素</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#常量"><span class="nav-number">2.1.</span> <span class="nav-text">常量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变量声明与数据类型"><span class="nav-number">2.2.</span> <span class="nav-text">变量声明与数据类型</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#net型变量"><span class="nav-number">2.2.1.</span> <span class="nav-text">net型变量</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#variable型变量"><span class="nav-number">2.2.2.</span> <span class="nav-text">variable型变量</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#向量"><span class="nav-number">2.3.</span> <span class="nav-text">向量</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运算符"><span class="nav-number">2.4.</span> <span class="nav-text">运算符</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#等式运算符中的“-”与“-”的区别"><span class="nav-number">2.4.1.</span> <span class="nav-text">等式运算符中的“==”与“===”的区别</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#缩位运算符与位运算"><span class="nav-number">2.4.2.</span> <span class="nav-text">缩位运算符与位运算</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#位拼接运算符"><span class="nav-number">2.4.3.</span> <span class="nav-text">位拼接运算符</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#运算符的优先级"><span class="nav-number">2.4.4.</span> <span class="nav-text">运算符的优先级</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">iMissWonder</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+    
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e4292e846c7e4c5f8536bb99cbf2fdcc",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

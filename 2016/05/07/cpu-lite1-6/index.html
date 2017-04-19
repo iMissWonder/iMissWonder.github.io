@@ -1,0 +1,760 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="计算机原理与汇编," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="第六篇实现译码、执行、访存、回写四个阶段的功能。数据通路、顶层文件以及SOPC将在下一篇中构建。 请注意一些细节，比如reg和wire类型的区别。赋值时reg类型要用always语句和非阻塞赋值（阻塞也可以），wire类型要用assign，否则会报错。 之前没有提到的一点语法细节是条件赋值语句。123//条件赋值语句//当条件为1时结果为a，条件为0时结果为b    assign 结果 = (条件">
+<meta name="keywords" content="计算机原理与汇编">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（六）">
+<meta property="og:url" content="http://yoursite.com/2016/05/07/cpu-lite1-6/index.html">
+<meta property="og:site_name" content="iMissWonder's Blog">
+<meta property="og:description" content="第六篇实现译码、执行、访存、回写四个阶段的功能。数据通路、顶层文件以及SOPC将在下一篇中构建。 请注意一些细节，比如reg和wire类型的区别。赋值时reg类型要用always语句和非阻塞赋值（阻塞也可以），wire类型要用assign，否则会报错。 之前没有提到的一点语法细节是条件赋值语句。123//条件赋值语句//当条件为1时结果为a，条件为0时结果为b    assign 结果 = (条件">
+<meta property="og:updated_time" content="2016-05-07T12:57:22.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（六）">
+<meta name="twitter:description" content="第六篇实现译码、执行、访存、回写四个阶段的功能。数据通路、顶层文件以及SOPC将在下一篇中构建。 请注意一些细节，比如reg和wire类型的区别。赋值时reg类型要用always语句和非阻塞赋值（阻塞也可以），wire类型要用assign，否则会报错。 之前没有提到的一点语法细节是条件赋值语句。123//条件赋值语句//当条件为1时结果为a，条件为0时结果为b    assign 结果 = (条件">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/07/cpu-lite1-6/"/>
+
+
+
+
+
+  <title> 如何用VerilogHDL编写一个单周期MIPS32CPU（六） | iMissWonder's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">iMissWonder's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Love to do the same thing.</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/07/cpu-lite1-6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="iMissWonder">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iMissWonder's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                如何用VerilogHDL编写一个单周期MIPS32CPU（六）
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-07T19:11:46+08:00">
+                2016-05-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a class="cloud-tie-join-count" href="/2016/05/07/cpu-lite1-6/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count join-count" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>第六篇实现译码、执行、访存、回写四个阶段的功能。<br>数据通路、顶层文件以及SOPC将在下一篇中构建。</p>
+<p>请注意一些细节，比如reg和wire类型的区别。赋值时reg类型要用always语句和非阻塞赋值（阻塞也可以），wire类型要用assign，否则会报错。</p>
+<p>之前没有提到的一点语法细节是条件赋值语句。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div></pre></td><td class="code"><pre><div class="line">//条件赋值语句</div><div class="line">//当条件为1时结果为a，条件为0时结果为b</div><div class="line">    assign 结果 = (条件) ? a : b</div></pre></td></tr></table></figure></p>
+<p>使用条件赋值语句可以大大简化代码，不用写那么长的if或case语句了。<br>不过只适用于一位的条件。两位的还是用case吧。<br><a id="more"></a></p>
+<h2 id="译码阶段"><a href="#译码阶段" class="headerlink" title="译码阶段"></a>译码阶段</h2><h3 id="寄存器组的实现"><a href="#寄存器组的实现" class="headerlink" title="寄存器组的实现"></a>寄存器组的实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line">module rf(</div><div class="line">    //输入</div><div class="line">    input wire          clk,</div><div class="line">    input wire          rst,</div><div class="line">    input wire          RegWrite,   //寄存器写使能</div><div class="line">    input wire[4:0]     RegAddr1,   //读取寄存器1地址</div><div class="line">    input wire[4:0]     RegAddr2,   //读取寄存器2地址</div><div class="line">    input wire[4:0]     WriteAddr,  //写入寄存器地址</div><div class="line">    input wire[31:0]    BusW,       //写入寄存器</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output wire[31:0]   BusA,       //读取寄存器A</div><div class="line">    output wire[31:0]   BusB,       //读取寄存器B</div><div class="line">    output wire[31:0]   Reg31       //$31中的内容</div><div class="line">    );</div><div class="line"></div><div class="line">    reg[31:0] RegFile[0:31];       //二维向量定义寄存器组</div><div class="line"></div><div class="line">    integer i;</div><div class="line"></div><div class="line">    //使用条件赋值语句保证0号寄存器读取内容始终为0</div><div class="line">    assign BusA = (RegAddr1 != 5&apos;b0) ? RegFile[RegAddr1] : 0;    //根据地址从寄存器1读取</div><div class="line">    assign BusB = (RegAddr2 != 5&apos;b0) ? RegFile[RegAddr2] : 0;    //根据地址从寄存器2读取</div><div class="line">    assign Reg31 = RegFile[31];                                  //从寄存器31中读取返回地址（jr）</div><div class="line"></div><div class="line">    always @ (posedge clk or negedge rst) begin</div><div class="line">        if(rst) begin</div><div class="line">            for (i = 0; i &lt; 32; i = i + 1) begin</div><div class="line">                RegFile[i] &lt;= 0;</div><div class="line">            end</div><div class="line">        end else begin</div><div class="line">            if (RegWrite &amp;&amp; WriteAddr != 0) begin               //写使能有效时</div><div class="line">                RegFile[WriteAddr] &lt;= BusW ;                    //进行写入</div><div class="line">            end</div><div class="line">        end</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="控制器的具体实现"><a href="#控制器的具体实现" class="headerlink" title="控制器的具体实现"></a>控制器的具体实现</h3><h4 id="控制器的宏定义"><a href="#控制器的宏定义" class="headerlink" title="控制器的宏定义"></a>控制器的宏定义</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div></pre></td><td class="code"><pre><div class="line">//Controller中的宏定义</div><div class="line"></div><div class="line">`define ADD   3&apos;b000              //加法</div><div class="line">`define SUB   3&apos;b001              //减法</div><div class="line">`define OR    3&apos;b010              //或</div><div class="line">`define LUI   3&apos;b011              //lui</div><div class="line">`define SLT   3&apos;b100              //slt</div><div class="line"></div><div class="line">`define R     6&apos;b00_0000        //R型指令的opcode</div><div class="line">`define addu  6&apos;b10_0001        //以下为R型指令的funct</div><div class="line">`define subu  6&apos;b10_0011</div><div class="line">`define slt   6&apos;b10_1010</div><div class="line">`define jr    6&apos;b00_1000</div><div class="line"></div><div class="line">`define addi  6&apos;b00_1000        //以下为I型指令的opcode</div><div class="line">`define addiu 6&apos;b00_1001</div><div class="line">`define ori   6&apos;b00_1101</div><div class="line">`define lw    6&apos;b10_0011</div><div class="line">`define sw    6&apos;b10_1011</div><div class="line">`define beq   6&apos;b00_0100</div><div class="line">`define lui   6&apos;b00_1111</div><div class="line"></div><div class="line">`define j     6&apos;b00_0010       //以下为J型指令的opcode</div><div class="line">`define jal   6&apos;b00_0011</div><div class="line"></div><div class="line">`define ALU       2&apos;b00        //寄存器组写入数据</div><div class="line">`define DMout     2&apos;b01</div><div class="line">`define JalAddr   2&apos;b10</div><div class="line"></div><div class="line">`define Rt        2&apos;b00        //寄存器组写入内容</div><div class="line">`define Rd        2&apos;b01</div><div class="line">`define LAST      2&apos;b10</div><div class="line"></div><div class="line">`define Plus      2&apos;b00        //跳转指令的判断</div><div class="line">`define Beq       2&apos;b01</div><div class="line">`define J         2&apos;b10</div><div class="line">`define Jr        2&apos;b11</div></pre></td></tr></table></figure>
+<h4 id="控制器"><a href="#控制器" class="headerlink" title="控制器"></a>控制器</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div><div class="line">215</div></pre></td><td class="code"><pre><div class="line">`include  &quot;define.v&quot;</div><div class="line">module control (</div><div class="line">    //输入</div><div class="line">    input wire[5:0] op,</div><div class="line">    input wire[5:0] funct,</div><div class="line"></div><div class="line">    //输出</div><div class="line">    //寄存器组</div><div class="line">    output reg RegWr,          //寄存器组写使能</div><div class="line">    output reg[1:0] RegDst,    //寄存器组写入地址</div><div class="line">                                //2&apos;b00：rt         2&apos;b01：rd</div><div class="line">                                //2&apos;b10：$31</div><div class="line">    output reg[1:0] MemtoReg,  //选择寄存器组写入数据</div><div class="line">                                //2&apos;b00：ALU计算结果  2&apos;b01：数据储存器的输出</div><div class="line">                                //2&apos;b10：jal指令的地址</div><div class="line"></div><div class="line">    //运算器</div><div class="line">    output reg AluSrc,         //ALU运算数         0：rt            1：立即数符号扩展的结果</div><div class="line">    output reg[2:0] ALUctr,    //ALU的运算模式</div><div class="line">                                //3&apos;b000：加法运算    3&apos;b010：减法运算</div><div class="line">                                //3&apos;b010：或运算      3&apos;b011：lui运算      3&apos;b100:slt运算</div><div class="line">    output reg ExtOp,          //判断是否为符号扩展</div><div class="line"></div><div class="line">    //数据储存器</div><div class="line">    output reg MemWr,          //数据储存器写使能</div><div class="line"></div><div class="line">    //指令控制信号</div><div class="line">    output reg[1:0] nPCsel     //判断是否为beq或j型命令</div><div class="line">    );</div><div class="line"></div><div class="line">    always @ ( * )  begin</div><div class="line">        if (op==`R) begin</div><div class="line">            case (funct)</div><div class="line">                `addu : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rd;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`ALU;     //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=0;        //ALU运算数         0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`ADD;     //运算模式</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `subu : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rd;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`ALU;     //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=0;        //ALU运算数        0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`SUB;     //运算模式</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `slt : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rd;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`ALU;     //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=0;        //ALU运算数        0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`SLT;     //运算模式</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `jr : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=0;        //寄存器组写使能</div><div class="line">                    //运算器</div><div class="line"></div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Jr;      //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line">            endcase</div><div class="line">        end else begin</div><div class="line">            case (op)</div><div class="line">                `addi : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rt;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`ALU;     //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=1;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`ADD;     //运算模式</div><div class="line">                    ExtOp   &lt;=1;        //是否为符号扩展</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `addiu : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rt;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`ALU;     //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=1;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`ADD;     //运算模式</div><div class="line">                    ExtOp   &lt;=1;        //是否为符号扩展</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `ori : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rt;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`ALU;     //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=1;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`OR;      //运算模式</div><div class="line">                    ExtOp   &lt;=0;        //是否为符号扩展</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `lw : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rt;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`DMout;   //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=1;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`ADD;   //运算模式</div><div class="line">                    ExtOp   &lt;=1;        //是否为符号扩展</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `sw : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=0;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rt;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=1;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`ADD;     //运算模式</div><div class="line">                    ExtOp   &lt;=1;        //是否为符号扩展</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=1;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `beq : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=0;        //寄存器组写使能</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=0;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`SUB;   //运算模式</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Beq;     //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `lui : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`Rt;      //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    //运算器</div><div class="line">                    AluSrc  &lt;=1;        //ALU运算数       0：rt           1：extimm</div><div class="line">                    ALUctr  &lt;=`LUI;     //运算模式</div><div class="line">                    ExtOp   &lt;=1;        //是否为符号扩展</div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=1;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`Plus;    //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `j : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=0;        //寄存器组写使能</div><div class="line">                    //运算器</div><div class="line"></div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`J;       //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line"></div><div class="line">                `jal : begin</div><div class="line">                    //寄存器组</div><div class="line">                    RegWr   &lt;=1;        //寄存器组写使能</div><div class="line">                    RegDst  &lt;=`LAST;    //寄存器组写入地址：Rt，Rd，LAST</div><div class="line">                    MemtoReg&lt;=`JalAddr; //寄存器组写入数据：ALU，DMout，JalAddr</div><div class="line">                    //运算器</div><div class="line"></div><div class="line">                    //数据储存器</div><div class="line">                    MemWr   &lt;=0;        //数据储存器写使能</div><div class="line">                    //PC</div><div class="line">                    nPCsel  &lt;=`J;       //跳转指令的判断：Plus，Beq，J，Jr</div><div class="line">                end</div><div class="line">            endcase</div><div class="line">        end</div><div class="line">    end</div><div class="line"> endmodule</div></pre></td></tr></table></figure>
+<h2 id="执行阶段"><a href="#执行阶段" class="headerlink" title="执行阶段"></a>执行阶段</h2><h3 id="运算器运算数的选择器"><a href="#运算器运算数的选择器" class="headerlink" title="运算器运算数的选择器"></a>运算器运算数的选择器</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div></pre></td><td class="code"><pre><div class="line">//ALU运算数的选择器</div><div class="line">module AluSrcMux(</div><div class="line">    //输入</div><div class="line">    input wire[31:0] rd2,</div><div class="line">    input wire[31:0] ext,</div><div class="line">    input wire AluSrc,</div><div class="line">    //输出</div><div class="line">    output reg[31:0] result</div><div class="line">    );</div><div class="line"></div><div class="line">    //0：将rt作为运算数</div><div class="line">    //1：将立即数扩展结果作为运算数</div><div class="line">    always @ ( * ) begin</div><div class="line">        result &lt;= AluSrc ? ext : rd2;</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="运算器"><a href="#运算器" class="headerlink" title="运算器"></a>运算器</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line">module alu(</div><div class="line">    //输入</div><div class="line">    input wire[31:0] A,         //运算数A</div><div class="line">    input wire[31:0] B,         //运算数B</div><div class="line">    input wire[2:0] AluCtr,     //ALU运算模式控制信号</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output reg[31:0] result,    //运算结果</div><div class="line">    output wire zero            //判断beq</div><div class="line">    );</div><div class="line"></div><div class="line">    always @ ( * ) begin</div><div class="line">        case (AluCtr)</div><div class="line">            3&apos;b000 : result &lt;= A + B ;</div><div class="line">            3&apos;b001 : result &lt;= A + ~B + 1 ;</div><div class="line">            3&apos;b010 : result &lt;= A | B ;</div><div class="line">            3&apos;b011 : result &lt;= &#123; B [15:0] , 16&apos;b0 &#125;;</div><div class="line">            3&apos;b100 : begin</div><div class="line">                    //SLT指令，首先比较符号位，根据符号判断大小</div><div class="line">                    if (A[31] == 1 &amp;&amp; B[31] == 0) begin</div><div class="line">                        result &lt;= 1;</div><div class="line">                    end else if(A[31] == 0 &amp;&amp; B[31] == 0) begin</div><div class="line">                        result &lt;= (A[30:0] &lt; B[30:0]) ? 1 : 0;</div><div class="line">                    end else begin</div><div class="line">                        result &lt;= (A[30:0] &lt; B[30:0]) ? 0 : 1;</div><div class="line">                    end</div><div class="line">                end</div><div class="line">        endcase</div><div class="line">    end</div><div class="line"></div><div class="line">    //若结果为零（即按位或结果为1），则zero=0，否则为1</div><div class="line">    assign zero = ( result[31:0] == 32&apos;b0 ) ? 0 : 1 ;</div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="扩展器"><a href="#扩展器" class="headerlink" title="扩展器"></a>扩展器</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div></pre></td><td class="code"><pre><div class="line">module ext(</div><div class="line">    //输入</div><div class="line">    input wire[15:0] imm,           //输入的16位立即数</div><div class="line">    input wire extop,               //0为无符号扩展，1为符号扩展</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output reg[31:0] extimm        //扩展后32位</div><div class="line">    );</div><div class="line"></div><div class="line">    //无符号扩展在高位补16个0</div><div class="line">    //符号扩展将符号位（也就是第15位）重复16次扩展在高位上</div><div class="line">    always @ ( * ) begin</div><div class="line">        extimm &lt;= extop ? &#123; &#123;16&#123;imm[15]&#125;&#125; , imm&#125; : &#123;16&apos;b0 , imm&#125;;</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h2 id="访存阶段"><a href="#访存阶段" class="headerlink" title="访存阶段"></a>访存阶段</h2><h3 id="数据储存器的实现"><a href="#数据储存器的实现" class="headerlink" title="数据储存器的实现"></a>数据储存器的实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">module dm(</div><div class="line">    //输入</div><div class="line">    input wire clk,</div><div class="line">    input wire[11:2] addr,                  //数据地址</div><div class="line">    input wire[31:0] din,                   //输入数据</div><div class="line">    input wire MemWr,                       //数据储存器写使能</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output reg[31:0] dout                  //输出数据</div><div class="line">    );</div><div class="line"></div><div class="line">    reg [31:0] DataMem[1023:0];             //二维向量定义数据储存器，大小为4kb</div><div class="line"></div><div class="line">    always @ (*) begin</div><div class="line">        dout = DataMem[addr[11:2]];           //读取数据</div><div class="line">    end</div><div class="line"></div><div class="line">    always @ (posedge clk) begin</div><div class="line">        if (MemWr)                          //写使能有效时</div><div class="line">            DataMem[addr[11:2]] &lt;= din;     //进行写入</div><div class="line">    end</div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h2 id="回写阶段"><a href="#回写阶段" class="headerlink" title="回写阶段"></a>回写阶段</h2><h3 id="寄存器组写入地址的选择器"><a href="#寄存器组写入地址的选择器" class="headerlink" title="寄存器组写入地址的选择器"></a>寄存器组写入地址的选择器</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div></pre></td><td class="code"><pre><div class="line">module RegDstMux(</div><div class="line">    //输入</div><div class="line">    input wire[4:0] rt,</div><div class="line">    input wire[4:0] rd,</div><div class="line">    input wire[1:0] RegDst,</div><div class="line">    //输出</div><div class="line">    output reg[4:0] result</div><div class="line">    );</div><div class="line"></div><div class="line">    //00：将rt作为写入地址</div><div class="line">    //01：将rd作为写入地址（R型指令）</div><div class="line">    //10：将$31作为写入地址（Jr）</div><div class="line"></div><div class="line">    always @ (*) begin</div><div class="line">        case(RegDst)</div><div class="line">            2&apos;b00: result &lt;= rt;</div><div class="line">            2&apos;b01: result &lt;= rd;</div><div class="line">            2&apos;b10: result &lt;= 5&apos;b11111;</div><div class="line">        endcase</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h2 id="寄存器组写入内容的选择器"><a href="#寄存器组写入内容的选择器" class="headerlink" title="寄存器组写入内容的选择器"></a>寄存器组写入内容的选择器</h2><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">module MemtoRegMux(</div><div class="line">    //输入</div><div class="line">    input wire[31:0] ALUResult,</div><div class="line">    input wire[31:0] DataMem,</div><div class="line">    input wire[31:0] jalAddr,</div><div class="line">    input wire[1:0] MemtoReg,</div><div class="line">    //输出</div><div class="line">    output reg[31:0] result</div><div class="line">    );</div><div class="line"></div><div class="line">    //00：将ALU计算结果写入寄存器</div><div class="line">    //01：将数据储存器读取结果写入寄存器（lw）</div><div class="line">    //10：将jal指令的返回地址写入$31中</div><div class="line"></div><div class="line">    always @ ( * ) begin</div><div class="line">        case(MemtoReg)</div><div class="line">            2&apos;b00: result &lt;= ALUResult;</div><div class="line">            2&apos;b01: result &lt;= DataMem;</div><div class="line">            2&apos;b10: result &lt;= jalAddr;</div><div class="line">        endcase</div><div class="line">    end</div><div class="line">endmodule</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/计算机原理与汇编/" rel="tag"># 计算机原理与汇编</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/07/cpu-lite1-7/" rel="next" title="如何用VerilogHDL编写一个单周期MIPS32CPU（七）">
+                <i class="fa fa-chevron-left"></i> 如何用VerilogHDL编写一个单周期MIPS32CPU（七）
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/07/cpu-lite1-5/" rel="prev" title="如何用VerilogHDL编写一个单周期MIPS32CPU（五）">
+                如何用VerilogHDL编写一个单周期MIPS32CPU（五） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="iMissWonder" />
+          <p class="site-author-name" itemprop="name">iMissWonder</p>
+           
+              <p class="site-description motion-element" itemprop="description">Love to do the same thing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#译码阶段"><span class="nav-number">1.</span> <span class="nav-text">译码阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#寄存器组的实现"><span class="nav-number">1.1.</span> <span class="nav-text">寄存器组的实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#控制器的具体实现"><span class="nav-number">1.2.</span> <span class="nav-text">控制器的具体实现</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#控制器的宏定义"><span class="nav-number">1.2.1.</span> <span class="nav-text">控制器的宏定义</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#控制器"><span class="nav-number">1.2.2.</span> <span class="nav-text">控制器</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#执行阶段"><span class="nav-number">2.</span> <span class="nav-text">执行阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#运算器运算数的选择器"><span class="nav-number">2.1.</span> <span class="nav-text">运算器运算数的选择器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运算器"><span class="nav-number">2.2.</span> <span class="nav-text">运算器</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#扩展器"><span class="nav-number">2.3.</span> <span class="nav-text">扩展器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#访存阶段"><span class="nav-number">3.</span> <span class="nav-text">访存阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据储存器的实现"><span class="nav-number">3.1.</span> <span class="nav-text">数据储存器的实现</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#回写阶段"><span class="nav-number">4.</span> <span class="nav-text">回写阶段</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#寄存器组写入地址的选择器"><span class="nav-number">4.1.</span> <span class="nav-text">寄存器组写入地址的选择器</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#寄存器组写入内容的选择器"><span class="nav-number">5.</span> <span class="nav-text">寄存器组写入内容的选择器</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">iMissWonder</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+    
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e4292e846c7e4c5f8536bb99cbf2fdcc",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

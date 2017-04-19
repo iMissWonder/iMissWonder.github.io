@@ -1,0 +1,765 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="计算机原理与汇编," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="第七篇为构建数据通路、顶层文件以及SOPC。写Testbench并用ModelSim进行仿真验证。这是最后一篇 将各个模块组装起来首先需要组装的是数据通路。数据通路包括除指令储存器、数据储存器和控制器以外的所有文件。然后要组装MIPS，也就是将数据通路和控制器组装起来。这里要注意到MIPS并不是最顶层的文件。最终我们要将MIPS和IM与DM进行连接，构成最小SOPC，这才是真正的顶层文件。因此最后">
+<meta name="keywords" content="计算机原理与汇编">
+<meta property="og:type" content="article">
+<meta property="og:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（七）">
+<meta property="og:url" content="http://yoursite.com/2016/05/07/cpu-lite1-7/index.html">
+<meta property="og:site_name" content="iMissWonder's Blog">
+<meta property="og:description" content="第七篇为构建数据通路、顶层文件以及SOPC。写Testbench并用ModelSim进行仿真验证。这是最后一篇 将各个模块组装起来首先需要组装的是数据通路。数据通路包括除指令储存器、数据储存器和控制器以外的所有文件。然后要组装MIPS，也就是将数据通路和控制器组装起来。这里要注意到MIPS并不是最顶层的文件。最终我们要将MIPS和IM与DM进行连接，构成最小SOPC，这才是真正的顶层文件。因此最后">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/1.png">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/2.png">
+<meta property="og:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/3.png">
+<meta property="og:updated_time" content="2016-05-07T12:54:52.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="如何用VerilogHDL编写一个单周期MIPS32CPU（七）">
+<meta name="twitter:description" content="第七篇为构建数据通路、顶层文件以及SOPC。写Testbench并用ModelSim进行仿真验证。这是最后一篇 将各个模块组装起来首先需要组装的是数据通路。数据通路包括除指令储存器、数据储存器和控制器以外的所有文件。然后要组装MIPS，也就是将数据通路和控制器组装起来。这里要注意到MIPS并不是最顶层的文件。最终我们要将MIPS和IM与DM进行连接，构成最小SOPC，这才是真正的顶层文件。因此最后">
+<meta name="twitter:image" content="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/1.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/07/cpu-lite1-7/"/>
+
+
+
+
+
+  <title> 如何用VerilogHDL编写一个单周期MIPS32CPU（七） | iMissWonder's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">iMissWonder's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Love to do the same thing.</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/07/cpu-lite1-7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="iMissWonder">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iMissWonder's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                如何用VerilogHDL编写一个单周期MIPS32CPU（七）
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-07T20:06:30+08:00">
+                2016-05-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a class="cloud-tie-join-count" href="/2016/05/07/cpu-lite1-7/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count join-count" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>第七篇为构建数据通路、顶层文件以及SOPC。写Testbench并用ModelSim进行仿真验证。<em>这是最后一篇</em></p>
+<h2 id="将各个模块组装起来"><a href="#将各个模块组装起来" class="headerlink" title="将各个模块组装起来"></a>将各个模块组装起来</h2><p>首先需要组装的是数据通路。数据通路包括除指令储存器、数据储存器和控制器以外的所有文件。<br>然后要组装MIPS，也就是将数据通路和控制器组装起来。<br>这里要注意到MIPS并不是最顶层的文件。最终我们要将MIPS和IM与DM进行连接，构成最小SOPC，这才是真正的顶层文件。<br>因此最后的仿真也是在最小SOPC上进行的。</p>
+<blockquote>
+<p>SOPC：System-on-a-Programmable-Chip，可编程片上系统。 用可编程逻辑技术把整个系统放到一块硅片上，即由单个芯片完成整个系统的主要逻辑功能。<br><a id="more"></a></p>
+</blockquote>
+<h3 id="数据通路的构建"><a href="#数据通路的构建" class="headerlink" title="数据通路的构建"></a>数据通路的构建</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div></pre></td><td class="code"><pre><div class="line">module datapath(</div><div class="line">    //输入</div><div class="line">    input wire clk,</div><div class="line">    input wire reset,</div><div class="line">    //指令</div><div class="line">    input wire[31:0] Inst,</div><div class="line">    //寄存器组</div><div class="line">    input wire RegWr,</div><div class="line">    input wire[1:0] RegDst,</div><div class="line">    input wire[1:0] MemtoReg,</div><div class="line">    //运算器</div><div class="line">    input wire AluSrc,</div><div class="line">    input wire[3:0] AluCtr,</div><div class="line">    input wire extOp,</div><div class="line"></div><div class="line">    //数据储存器</div><div class="line">    input wire MemWr,</div><div class="line">    input wire [31:0] ReadData,</div><div class="line"></div><div class="line">    //</div><div class="line">    input wire[1:0] nPCsel,</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output wire[31:0] Pc,         //下一个pc</div><div class="line">    output wire[31:0] ALU,        //ALU计算结果</div><div class="line">    output wire[31:0] WriteData   //写入数据储存器的内容（sw）</div><div class="line">    );</div><div class="line"></div><div class="line">    wire[31:0] Npc;               //下一个pc的值</div><div class="line">    wire[31:0] jalInput;          //$31中的返回地址</div><div class="line">    wire[31:0] jalAddr;           //jal指令的返回地址</div><div class="line">    wire zero;                    //判断beq</div><div class="line"></div><div class="line">    wire[31:0] R1 , R2;           //两个进行计算的数</div><div class="line">    wire[4:0] BusWAddr;           //BusW的输入地址</div><div class="line">    wire[31:0] BusWInput;         //BusW的输入内容</div><div class="line"></div><div class="line">    wire[31:0] Ext;               //imm16扩展后的数</div><div class="line"></div><div class="line">    //计算下一条PC指令</div><div class="line">    pc PC(Npc , clk , reset , Pc) ;</div><div class="line">    npc NPC(Pc , Inst , nPCsel , jalInput , zero , Npc, jalAddr) ;</div><div class="line"></div><div class="line">    //寄存器组</div><div class="line">    rf RF(clk , reset, RegWr , Inst[25:21] , Inst[20:16] , BusWAddr , BusWInput , R1 ,WriteData, jalInput);</div><div class="line">    RegDstMux regdstmux( Inst[20:16] , Inst[15:11] , RegDst , BusWAddr );</div><div class="line">    MemtoRegMux MtRMux( ALU , ReadData ,jalAddr ,MemtoReg , BusWInput);</div><div class="line"></div><div class="line">    //运算器</div><div class="line">    ext EXT(Inst[15:0], extOp , Ext) ;</div><div class="line">    AluSrcMux alusrcmux( WriteData , Ext , AluSrc , R2 );</div><div class="line">    alu alu( R1 , R2 , AluCtr , ALU , zero) ;</div><div class="line"></div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="MIPS的构建"><a href="#MIPS的构建" class="headerlink" title="MIPS的构建"></a>MIPS的构建</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div></pre></td><td class="code"><pre><div class="line">module mips(</div><div class="line">    //输入</div><div class="line">    input wire clk,</div><div class="line">    input wire reset,</div><div class="line">    input wire[31:0] Inst,              //指令储存器输入的指令</div><div class="line">    input wire[31:0] ReadData,          //数据储存器读取</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output wire[31:0] ALU,              //运算器输出结果</div><div class="line">    output wire MemWr,                  //数据储存器写使能</div><div class="line">    output wire[31:0] WriteData,        //数据储存器写入内容</div><div class="line">    output wire[31:2] pc                //指令地址</div><div class="line">    );</div><div class="line"></div><div class="line">    //寄存器组信号</div><div class="line">    wire RegWr;</div><div class="line">    wire[1:0] RegDst;</div><div class="line">    wire[1:0] MemtoReg;</div><div class="line"></div><div class="line">    //运算器信号</div><div class="line">    wire AluSrc;</div><div class="line">    wire[2:0] AluCtr;</div><div class="line">    wire extop;</div><div class="line"></div><div class="line">    //指令控制信号</div><div class="line">    wire[1:0] nPCsel;</div><div class="line"></div><div class="line">    control control( Inst[31:26] , Inst[5:0] , RegWr , RegDst, MemtoReg, AluSrc,</div><div class="line">        AluCtr, extop, MemWr, nPCsel);</div><div class="line"></div><div class="line">    datapath datapath( clk , reset , Inst, RegWr, RegDst, MemtoReg, AluSrc, AluCtr,</div><div class="line">        extop , MemWr, ReadData , nPCsel, pc, ALU, WriteData);</div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h3 id="SOPC的构建"><a href="#SOPC的构建" class="headerlink" title="SOPC的构建"></a>SOPC的构建</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div></pre></td><td class="code"><pre><div class="line">module mips_sopc(</div><div class="line">    //输入</div><div class="line">    input wire CLK,</div><div class="line">    input wire RESET ,</div><div class="line"></div><div class="line">    //输出</div><div class="line">    output wire[31:0] DATA,         //运算器输出结果</div><div class="line">    output wire MEMWRITE,           //数据储存器写使能</div><div class="line">    output wire[31:0] WRITEDATA     //数据储存器器写入内容</div><div class="line">    );</div><div class="line"></div><div class="line">    wire [31:2] PC ;</div><div class="line">    wire [31:0] INST , READDATA ;</div><div class="line"></div><div class="line">    //连接mips,IM、DM，构成SOPC（System-on-a-Programmable-Chip）</div><div class="line">    mips MIPS(CLK, RESET,  INST, READDATA, DATA, MEMWR, WRITEDATA, PC);</div><div class="line"></div><div class="line">    im IM(PC[11:2] , INST);</div><div class="line"></div><div class="line">    dm DM(CLK, DATA[11:2]  , WRITEDATA , MEMWR , READDATA);</div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure>
+<h2 id="仿真"><a href="#仿真" class="headerlink" title="仿真"></a>仿真</h2><p><strong>进行仿真的目的是要看到寄存器组的内容和Mars运行结果相符</strong>，这样就验证了代码的正确性。</p>
+<h3 id="指令内容"><a href="#指令内容" class="headerlink" title="指令内容"></a>指令内容</h3><p><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/1.png" alt="指令"></p>
+<h3 id="运行结果对比"><a href="#运行结果对比" class="headerlink" title="运行结果对比"></a>运行结果对比</h3><p><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/2.png" alt="Mars运行结果"><br><img src="http://7xt50p.com1.z0.glb.clouddn.com/post/cpu/6/3.png" alt="仿真结果"><br>注意到$28和$29中内容不一致。这两个寄存器分别是全局指针和堆栈指针，我们的指令并没有使用到，因此我认为可以忽略。</p>
+<h3 id="仿真文件及调试"><a href="#仿真文件及调试" class="headerlink" title="仿真文件及调试"></a>仿真文件及调试</h3><p>进行到这一步，别以为算是大功告成了。DEBUG的时间很可能会比写代码的时间更长。<br>建议在仿真时保留波形，遇到BUG从指令出发逐个信号分析。<br>$stop函数最好要有，不然仿真起来比较麻烦。timescale也建议调成1ns/1ns，方便查看。<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div></pre></td><td class="code"><pre><div class="line">`timescale  1ns/1ns</div><div class="line">module mips_sopc_tb();</div><div class="line"></div><div class="line">    reg clk;</div><div class="line">    reg rst;</div><div class="line">    wire[31:0] data;</div><div class="line">    wire memwrite;</div><div class="line">    wire[31:0] writedata;</div><div class="line"></div><div class="line">    initial begin</div><div class="line">        clk = 1&apos;b0;</div><div class="line">        forever #10 clk = ~clk;</div><div class="line">    end</div><div class="line"></div><div class="line">    initial begin</div><div class="line">        rst = 1&apos;b1;</div><div class="line">        #195 rst= 1&apos;b0;</div><div class="line">        #2000 $stop;</div><div class="line">    end</div><div class="line"></div><div class="line">    mips_sopc SOPC(clk , rst, data, memwrite, memwrite);</div><div class="line"></div><div class="line">endmodule</div></pre></td></tr></table></figure></p>
+<h3 id="测试用例"><a href="#测试用例" class="headerlink" title="测试用例"></a>测试用例</h3><p>即为code.txt内容<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div></pre></td><td class="code"><pre><div class="line">34100001</div><div class="line">34110003</div><div class="line">34080001</div><div class="line">3c0c0001</div><div class="line">3c0d000a</div><div class="line">00102021</div><div class="line">00082821</div><div class="line">0c000c2e</div><div class="line">00028021</div><div class="line">02288823</div><div class="line">1211fffa</div><div class="line">34080004</div><div class="line">20090004</div><div class="line">240afff8</div><div class="line">ad0c0000</div><div class="line">8d0e0000</div><div class="line">ad0d0004</div><div class="line">8d0f0004</div><div class="line">ad0efffc</div><div class="line">8d12fffc</div><div class="line">00082021</div><div class="line">00092821</div><div class="line">0c000c2e</div><div class="line">00024021</div><div class="line">0148c82a</div><div class="line">13200016</div><div class="line">01484023</div><div class="line">11000001</div><div class="line">3c0cffff</div><div class="line">34000001</div><div class="line">3c080005</div><div class="line">3c090032</div><div class="line">00082021</div><div class="line">00092821</div><div class="line">0c000c2e</div><div class="line">00024021</div><div class="line">00082021</div><div class="line">00092821</div><div class="line">0c000c2e</div><div class="line">00024821</div><div class="line">01094821</div><div class="line">01284823</div><div class="line">3c0a0069</div><div class="line">112a0001</div><div class="line">1000fff3</div><div class="line">08000c33</div><div class="line">00851021</div><div class="line">03e00008</div><div class="line">3c011234</div><div class="line">34215678</div><div class="line">0001d020</div></pre></td></tr></table></figure></p>
+<h2 id="结语"><a href="#结语" class="headerlink" title="结语"></a>结语</h2><p>无，这玩意真是做吐血了！<br>不过下一个应该就不会这么困难了，毕竟这次是从语法学起。<br>但愿吧！</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/计算机原理与汇编/" rel="tag"># 计算机原理与汇编</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2016/05/12/cppMinRoad/" rel="next" title="有向图的最短路径">
+                <i class="fa fa-chevron-left"></i> 有向图的最短路径
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/07/cpu-lite1-6/" rel="prev" title="如何用VerilogHDL编写一个单周期MIPS32CPU（六）">
+                如何用VerilogHDL编写一个单周期MIPS32CPU（六） <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="iMissWonder" />
+          <p class="site-author-name" itemprop="name">iMissWonder</p>
+           
+              <p class="site-description motion-element" itemprop="description">Love to do the same thing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#将各个模块组装起来"><span class="nav-number">1.</span> <span class="nav-text">将各个模块组装起来</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#数据通路的构建"><span class="nav-number">1.1.</span> <span class="nav-text">数据通路的构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#MIPS的构建"><span class="nav-number">1.2.</span> <span class="nav-text">MIPS的构建</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#SOPC的构建"><span class="nav-number">1.3.</span> <span class="nav-text">SOPC的构建</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#仿真"><span class="nav-number">2.</span> <span class="nav-text">仿真</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#指令内容"><span class="nav-number">2.1.</span> <span class="nav-text">指令内容</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#运行结果对比"><span class="nav-number">2.2.</span> <span class="nav-text">运行结果对比</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#仿真文件及调试"><span class="nav-number">2.3.</span> <span class="nav-text">仿真文件及调试</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#测试用例"><span class="nav-number">2.4.</span> <span class="nav-text">测试用例</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#结语"><span class="nav-number">3.</span> <span class="nav-text">结语</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">iMissWonder</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+    
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e4292e846c7e4c5f8536bb99cbf2fdcc",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+</body>
+</html>

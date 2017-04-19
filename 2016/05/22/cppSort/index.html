@@ -1,0 +1,724 @@
+<!doctype html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.0" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="编程," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.0" />
+
+
+
+
+
+
+<meta name="description" content="堆排序、快速排序、冒泡排序的运行时间比较。代码如下。">
+<meta name="keywords" content="编程">
+<meta property="og:type" content="article">
+<meta property="og:title" content="三种排序算法">
+<meta property="og:url" content="http://yoursite.com/2016/05/22/cppSort/index.html">
+<meta property="og:site_name" content="iMissWonder's Blog">
+<meta property="og:description" content="堆排序、快速排序、冒泡排序的运行时间比较。代码如下。">
+<meta property="og:updated_time" content="2016-05-23T00:37:18.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="三种排序算法">
+<meta name="twitter:description" content="堆排序、快速排序、冒泡排序的运行时间比较。代码如下。">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/05/22/cppSort/"/>
+
+
+
+
+
+  <title> 三种排序算法 | iMissWonder's Blog </title>
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">iMissWonder's Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle">Love to do the same thing.</p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-commonweal">
+          <a href="/404.html" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-heartbeat"></i> <br />
+            
+            公益404
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/05/22/cppSort/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="iMissWonder">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="iMissWonder's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+            
+            
+              
+                三种排序算法
+              
+            
+          </h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-05-22T12:05:56+08:00">
+                2016-05-22
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i>
+                </span>
+                <a class="cloud-tie-join-count" href="/2016/05/22/cppSort/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count join-count" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <p>堆排序、快速排序、冒泡排序的运行时间比较。代码如下。<br><a id="more"></a></p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div><div class="line">26</div><div class="line">27</div><div class="line">28</div><div class="line">29</div><div class="line">30</div><div class="line">31</div><div class="line">32</div><div class="line">33</div><div class="line">34</div><div class="line">35</div><div class="line">36</div><div class="line">37</div><div class="line">38</div><div class="line">39</div><div class="line">40</div><div class="line">41</div><div class="line">42</div><div class="line">43</div><div class="line">44</div><div class="line">45</div><div class="line">46</div><div class="line">47</div><div class="line">48</div><div class="line">49</div><div class="line">50</div><div class="line">51</div><div class="line">52</div><div class="line">53</div><div class="line">54</div><div class="line">55</div><div class="line">56</div><div class="line">57</div><div class="line">58</div><div class="line">59</div><div class="line">60</div><div class="line">61</div><div class="line">62</div><div class="line">63</div><div class="line">64</div><div class="line">65</div><div class="line">66</div><div class="line">67</div><div class="line">68</div><div class="line">69</div><div class="line">70</div><div class="line">71</div><div class="line">72</div><div class="line">73</div><div class="line">74</div><div class="line">75</div><div class="line">76</div><div class="line">77</div><div class="line">78</div><div class="line">79</div><div class="line">80</div><div class="line">81</div><div class="line">82</div><div class="line">83</div><div class="line">84</div><div class="line">85</div><div class="line">86</div><div class="line">87</div><div class="line">88</div><div class="line">89</div><div class="line">90</div><div class="line">91</div><div class="line">92</div><div class="line">93</div><div class="line">94</div><div class="line">95</div><div class="line">96</div><div class="line">97</div><div class="line">98</div><div class="line">99</div><div class="line">100</div><div class="line">101</div><div class="line">102</div><div class="line">103</div><div class="line">104</div><div class="line">105</div><div class="line">106</div><div class="line">107</div><div class="line">108</div><div class="line">109</div><div class="line">110</div><div class="line">111</div><div class="line">112</div><div class="line">113</div><div class="line">114</div><div class="line">115</div><div class="line">116</div><div class="line">117</div><div class="line">118</div><div class="line">119</div><div class="line">120</div><div class="line">121</div><div class="line">122</div><div class="line">123</div><div class="line">124</div><div class="line">125</div><div class="line">126</div><div class="line">127</div><div class="line">128</div><div class="line">129</div><div class="line">130</div><div class="line">131</div><div class="line">132</div><div class="line">133</div><div class="line">134</div><div class="line">135</div><div class="line">136</div><div class="line">137</div><div class="line">138</div><div class="line">139</div><div class="line">140</div><div class="line">141</div><div class="line">142</div><div class="line">143</div><div class="line">144</div><div class="line">145</div><div class="line">146</div><div class="line">147</div><div class="line">148</div><div class="line">149</div><div class="line">150</div><div class="line">151</div><div class="line">152</div><div class="line">153</div><div class="line">154</div><div class="line">155</div><div class="line">156</div><div class="line">157</div><div class="line">158</div><div class="line">159</div><div class="line">160</div><div class="line">161</div><div class="line">162</div><div class="line">163</div><div class="line">164</div><div class="line">165</div><div class="line">166</div><div class="line">167</div><div class="line">168</div><div class="line">169</div><div class="line">170</div><div class="line">171</div><div class="line">172</div><div class="line">173</div><div class="line">174</div><div class="line">175</div><div class="line">176</div><div class="line">177</div><div class="line">178</div><div class="line">179</div><div class="line">180</div><div class="line">181</div><div class="line">182</div><div class="line">183</div><div class="line">184</div><div class="line">185</div><div class="line">186</div><div class="line">187</div><div class="line">188</div><div class="line">189</div><div class="line">190</div><div class="line">191</div><div class="line">192</div><div class="line">193</div><div class="line">194</div><div class="line">195</div><div class="line">196</div><div class="line">197</div><div class="line">198</div><div class="line">199</div><div class="line">200</div><div class="line">201</div><div class="line">202</div><div class="line">203</div><div class="line">204</div><div class="line">205</div><div class="line">206</div><div class="line">207</div><div class="line">208</div><div class="line">209</div><div class="line">210</div><div class="line">211</div><div class="line">212</div><div class="line">213</div><div class="line">214</div></pre></td><td class="code"><pre><div class="line">#include &lt;iostream&gt;</div><div class="line">#include &lt;time.h&gt;</div><div class="line"></div><div class="line">#define DEBUG</div><div class="line">#define MAX 20000</div><div class="line">using namespace std;</div><div class="line"></div><div class="line">class Heap &#123;</div><div class="line">public:</div><div class="line">	Heap(int inarray[], int arraylength)</div><div class="line">	&#123;</div><div class="line">		length = arraylength;</div><div class="line">		for (int i = 0; i &lt; length; i++)</div><div class="line">		&#123;</div><div class="line">			array[i] = inarray[i];</div><div class="line">		&#125;</div><div class="line">		//最后一个有孩子的节点的位置 i=(length -1) / 2  </div><div class="line">		for (int i = (length - 1) / 2; i &gt;= 0; --i)</div><div class="line">			HeapAdjust(array, i, length);</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	// 堆排序算法</div><div class="line">	void HeapSort()</div><div class="line">	&#123;</div><div class="line">		//从最后一个元素开始对序列进行调整  </div><div class="line">		for (int i = length - 1; i &gt; 0; --i)</div><div class="line">		&#123;</div><div class="line">			//交换堆顶元素H[0]和堆中最后一个元素  </div><div class="line">			int temp = array[i]; array[i] = array[0]; array[0] = temp;</div><div class="line">			//每次交换堆顶元素和堆中最后一个元素之后，都要对堆进行调整  </div><div class="line">			HeapAdjust(array, 0, i);</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	// 打印堆</div><div class="line">	void printHeap()</div><div class="line">	&#123;</div><div class="line">		for (int i = 0; i &lt; length; i++)</div><div class="line">		&#123;</div><div class="line">			cout &lt;&lt; array[i] &lt;&lt; &quot;  &quot;;</div><div class="line">		&#125;</div><div class="line">		cout &lt;&lt; endl;</div><div class="line">	&#125;</div><div class="line"></div><div class="line"></div><div class="line">private:</div><div class="line">	/**</div><div class="line">	* 已知H[s…m]除了H[s] 外均满足堆的定义</div><div class="line">	* 调整H[s],使其成为大顶堆.即将对第s个结点为根的子树筛选,</div><div class="line">	*</div><div class="line">	* H是待调整的堆数组</div><div class="line">	* s是待调整的数组元素的位置</div><div class="line">	* length是数组的长度</div><div class="line">	*</div><div class="line">	*/</div><div class="line">	void HeapAdjust(int H[], int s, int length)</div><div class="line">	&#123;</div><div class="line">		int tmp = H[s];</div><div class="line">		int child = 2 * s + 1; //左孩子结点的位置。(i+1 为当前调整结点的右孩子结点的位置)  </div><div class="line">		while (child &lt; length) &#123;</div><div class="line">			if (child + 1 &lt;length &amp;&amp; H[child]&lt;H[child + 1]) &#123; // 如果右孩子大于左孩子(找到比当前待调整结点大的孩子结点)  </div><div class="line">				++child;</div><div class="line">			&#125;</div><div class="line">			if (H[s]&lt;H[child]) &#123;  // 如果较大的子结点大于父结点  </div><div class="line">				H[s] = H[child]; // 那么把较大的子结点往上移动，替换它的父结点  </div><div class="line">				s = child;       // 重新设置s ,即待调整的下一个结点的位置  </div><div class="line">				child = 2 * s + 1;</div><div class="line">			&#125;</div><div class="line">			else &#123;            // 如果当前待调整结点大于它的左右孩子，则不需要调整，直接退出  </div><div class="line">				break;</div><div class="line">			&#125;</div><div class="line">			H[s] = tmp;         // 当前待调整的结点放到比其大的孩子结点位置上  </div><div class="line">		&#125;</div><div class="line"></div><div class="line">		//print(H, length);</div><div class="line"></div><div class="line">	&#125;</div><div class="line"></div><div class="line">	/*</div><div class="line">	void print(int a[], int n)</div><div class="line">	&#123;</div><div class="line">		for (int j = 0; j &lt; n; j++)</div><div class="line">		&#123;</div><div class="line">			cout &lt;&lt; a[j] &lt;&lt; &quot;  &quot;;</div><div class="line">		&#125;</div><div class="line">		cout &lt;&lt; endl;</div><div class="line">	&#125;</div><div class="line">	*/</div><div class="line"></div><div class="line">	int array[MAX];</div><div class="line">	int length;</div><div class="line">&#125;;</div><div class="line"></div><div class="line">class Quick &#123;</div><div class="line">public:</div><div class="line">	Quick(int inarray[], int n)</div><div class="line">	&#123;</div><div class="line">		length = n;</div><div class="line">		for (int i = 0; i &lt; length; i++)</div><div class="line">		&#123;</div><div class="line">			array[i] = inarray[i];</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">	int partition(int low, int high)</div><div class="line">	&#123;</div><div class="line">		int privotKey = array[low];			                          //基准元素  </div><div class="line">		while (low &lt; high) &#123;										  //从表的两端交替地向中间扫描  </div><div class="line">			while (low &lt; high  &amp;&amp; array[high] &gt;= privotKey) --high;   //从high 所指位置向前搜索，至多到low+1 位置。将比基准元素小的交换到低端  </div><div class="line">			swap(&amp;array[low], &amp;array[high]);</div><div class="line">			while (low &lt; high  &amp;&amp; array[low] &lt;= privotKey) ++low;</div><div class="line">			swap(&amp;array[low], &amp;array[high]);</div><div class="line">		&#125;</div><div class="line">		return low;</div><div class="line">	&#125;</div><div class="line">	void QuickSort(int low, int high) &#123;</div><div class="line">		if (low &lt; high) &#123;</div><div class="line">			int privotLoc = partition(low, high);   //将表一分为二  </div><div class="line">			QuickSort(low, privotLoc - 1);          //递归对低子表递归排序  </div><div class="line">			QuickSort(privotLoc + 1, high);         //递归对高子表递归排序  </div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">	void print() &#123;</div><div class="line">		for (int i = 0; i &lt; length; i++) &#123;</div><div class="line">			cout &lt;&lt; array[i] &lt;&lt; &quot;  &quot;;</div><div class="line">		&#125;</div><div class="line">		cout &lt;&lt; endl;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">private:</div><div class="line">	void swap(int *a, int *b)</div><div class="line">	&#123;</div><div class="line">		int tmp = *a;</div><div class="line">		*a = *b;</div><div class="line">		*b = tmp;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	int array[MAX];</div><div class="line">	int length;</div><div class="line">&#125;;</div><div class="line"></div><div class="line">void BubbleSort(int a[], int length)</div><div class="line">&#123;</div><div class="line">	for (int i = 0; i &lt; length - 1; ++i) &#123;</div><div class="line">		for (int j = 0; j &lt; length - i - 1; ++j) &#123;</div><div class="line">			if (a[j] &gt; a[j + 1])</div><div class="line">			&#123;</div><div class="line">				int temp = a[j];</div><div class="line">				a[j] = a[j + 1];</div><div class="line">				a[j + 1] = temp;</div><div class="line">			&#125;</div><div class="line">		&#125;</div><div class="line">	&#125;</div><div class="line">&#125;</div><div class="line"></div><div class="line">int main() &#123;</div><div class="line"></div><div class="line">	//待排序数组</div><div class="line">	int array[MAX];</div><div class="line">	srand((unsigned)time(NULL));</div><div class="line">	for (int i = 0; i &lt; MAX; i++)</div><div class="line">	&#123;</div><div class="line">		array[i] = rand() % MAX;</div><div class="line">	&#125;</div><div class="line"></div><div class="line">	//计时变量</div><div class="line">	clock_t start, finish;</div><div class="line">	double duration;</div><div class="line"></div><div class="line">	//堆排序</div><div class="line">	Heap H(array, MAX);		    	//创建堆</div><div class="line">	if (MAX &lt; 20)</div><div class="line">	&#123;</div><div class="line">		cout &lt;&lt; &quot;初始值：&quot;;</div><div class="line">		H.printHeap();</div><div class="line">	&#125;</div><div class="line">	start = clock();				//开始计时</div><div class="line">	H.HeapSort();					//排序</div><div class="line">	finish = clock();				//结束计时</div><div class="line">	duration = finish - start;		//计算时间</div><div class="line">	if (MAX &lt; 20)</div><div class="line">	&#123;</div><div class="line">		cout &lt;&lt; &quot;结果：&quot;;</div><div class="line">		H.printHeap();</div><div class="line">	&#125;</div><div class="line">	cout &lt;&lt; &quot;1.堆排序&quot; &lt;&lt; endl;</div><div class="line">	cout &lt;&lt; &quot;时间：&quot; &lt;&lt; duration &lt;&lt; &quot;ms&quot; &lt;&lt; endl &lt;&lt; endl;</div><div class="line"></div><div class="line">	//快速排序</div><div class="line">	Quick Q(array, MAX);			//创建堆</div><div class="line">	if (MAX &lt; 20)</div><div class="line">	&#123;</div><div class="line">		cout &lt;&lt; &quot;初始值：&quot;;</div><div class="line">		Q.print();</div><div class="line">	&#125;</div><div class="line">	start = clock();				//开始计时</div><div class="line">	Q.QuickSort(0, MAX - 1);		//排序</div><div class="line">	finish = clock();				//结束计时</div><div class="line">	duration = finish - start;		//计算时间</div><div class="line">	if (MAX &lt; 20)</div><div class="line">	&#123;</div><div class="line">		cout &lt;&lt; &quot;结果：&quot;;</div><div class="line">		H.printHeap();</div><div class="line">	&#125;</div><div class="line">	cout &lt;&lt; &quot;2.快速排序&quot; &lt;&lt; endl;</div><div class="line">	cout &lt;&lt; &quot;时间：&quot; &lt;&lt; duration &lt;&lt; &quot;ms&quot; &lt;&lt; endl &lt;&lt; endl;</div><div class="line"></div><div class="line">	//冒泡排序</div><div class="line">	start = clock();				//开始计时</div><div class="line">	BubbleSort(array, MAX);			//排序</div><div class="line">	finish = clock();				//结束计时</div><div class="line">	duration = finish - start;		//计算时间</div><div class="line">	cout &lt;&lt; &quot;3.冒泡排序&quot; &lt;&lt; endl;</div><div class="line">	cout &lt;&lt; &quot;时间：&quot; &lt;&lt; duration &lt;&lt; &quot;ms&quot; &lt;&lt; endl &lt;&lt; endl;</div><div class="line">&#125;</div></pre></td></tr></table></figure>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/编程/" rel="tag"># 编程</a>
+          
+        </div>
+      
+
+      
+        
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/04/02/restart/" rel="next" title="重启个人网站">
+                <i class="fa fa-chevron-left"></i> 重启个人网站
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2016/05/15/cpu-lite2/" rel="prev" title="多周期MIPS32CPU的实现">
+                多周期MIPS32CPU的实现 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+        <!-- JiaThis Button BEGIN -->
+<div class="jiathis_style">
+  <a class="jiathis_button_tsina"></a>
+  <a class="jiathis_button_tqq"></a>
+  <a class="jiathis_button_weixin"></a>
+  <a class="jiathis_button_cqq"></a>
+  <a class="jiathis_button_douban"></a>
+  <a class="jiathis_button_renren"></a>
+  <a class="jiathis_button_qzone"></a>
+  <a class="jiathis_button_kaixin001"></a>
+  <a class="jiathis_button_copy"></a>
+  <a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank"></a>
+  <a class="jiathis_counter_style"></a>
+</div>
+<script type="text/javascript" >
+  var jiathis_config={
+    hideMore:false
+  }
+</script>
+<script type="text/javascript" src="http://v3.jiathis.com/code/jia.js" charset="utf-8"></script>
+<!-- JiaThis Button END -->
+
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+      <div id="cloud-tie-wrapper" class="cloud-tie-wrapper"></div>
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-inner">
+
+      
+
+      
+
+      <section class="site-overview sidebar-panel sidebar-panel-active">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.jpg"
+               alt="iMissWonder" />
+          <p class="site-author-name" itemprop="name">iMissWonder</p>
+           
+              <p class="site-description motion-element" itemprop="description">Love to do the same thing.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives">
+                <span class="site-state-item-count">19</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              
+                <span class="site-state-item-count">5</span>
+                <span class="site-state-item-name">标签</span>
+              
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">iMissWonder</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+  
+  <script type="text/javascript" src="/lib/canvas-nest/canvas-nest.min.js"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.0"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.0"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.0"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.0"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.0"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+    
+    <script>
+      var cloudTieConfig = {
+        url: document.location.href, 
+        sourceId: "",
+        productKey: "e4292e846c7e4c5f8536bb99cbf2fdcc",
+        target: "cloud-tie-wrapper"
+      };
+    </script>
+    <script src="https://img1.ws.126.net/f2e/tie/yun/sdk/loader.js"></script>
+  
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+
+  
+
+</body>
+</html>
